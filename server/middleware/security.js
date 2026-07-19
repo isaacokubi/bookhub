@@ -1,46 +1,43 @@
 import helmet from "helmet";
-
-import rateLimit from "express-rate-limit";
-
 import mongoSanitize from "express-mongo-sanitize";
-
-import xss from "xss-clean";
-
-
-
-export const securityMiddleware=(app)=>{
+import rateLimit from "express-rate-limit";
+import xss from "xss";
 
 
-app.use(
-helmet()
-);
+export const securityMiddleware = (app)=>{
+
+    app.use(helmet());
+
+    app.use(mongoSanitize());
 
 
+    app.use((req,res,next)=>{
 
-app.use(
-mongoSanitize()
-);
+        if(req.body){
+
+            Object.keys(req.body).forEach(key=>{
+
+                if(typeof req.body[key] === "string"){
+
+                    req.body[key] = xss(req.body[key]);
+
+                }
+
+            });
+
+        }
+
+        next();
+
+    });
 
 
+    app.use(rateLimit({
 
-app.use(
-xss()
-);
+        windowMs:15 * 60 * 1000,
 
+        max:100
 
-
-app.use(
-
-rateLimit({
-
-windowMs:
-15*60*1000,
-
-max:300
-
-})
-
-);
-
+    }));
 
 };
