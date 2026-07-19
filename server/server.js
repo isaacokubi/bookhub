@@ -10,6 +10,9 @@ import cors from "cors";
 
 import morgan from "morgan";
 
+import sanitize from "./middleware/sanitize.js";
+
+
 import cookieParser from "cookie-parser";
 import {createServer}
 from "http";
@@ -79,9 +82,17 @@ app.use(
   cors({
     origin: [
       "http://localhost:5173",
-      "https://your-vercel-domain.vercel.app"
+      "https://bookhub-swart.vercel.app"
     ],
-    credentials: true
+    credentials:true,
+    methods:[
+      "GET",
+      "POST",
+      "PUT",
+      "PATCH",
+      "DELETE",
+      "OPTIONS"
+    ]
   })
 );
 
@@ -90,6 +101,8 @@ app.use(
 app.use(
 express.json()
 );
+
+app.use(sanitize);
 
 
 app.use(

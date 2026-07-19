@@ -1,5 +1,5 @@
 import helmet from "helmet";
-import mongoSanitize from "express-mongo-sanitize";
+// import mongoSanitize from "express-mongo-sanitize";
 import rateLimit from "express-rate-limit";
 import xss from "xss";
 
@@ -8,7 +8,7 @@ export const securityMiddleware = (app)=>{
 
     app.use(helmet());
 
-    app.use(mongoSanitize());
+    // app.use(mongoSanitize());
 
 
     app.use((req,res,next)=>{
