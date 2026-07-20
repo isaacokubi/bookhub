@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 
 import { useParams, Link } from "react-router-dom";
 
+import { toast } from "react-toastify";
+
 import { getBook } from "../api/bookApi";
 
 import { useCart } from "../context/CartContext";
@@ -29,6 +31,15 @@ export default function BookDetails() {
     }
   };
 
+  const handleAddToCart = () => {
+    addToCart(book);
+
+    toast.success("Book added successfully to cart", {
+      position: "top-right",
+      autoClose: 2000,
+    });
+  };
+
   if (!book) return <div className="p-10">Loading...</div>;
 
   return (
@@ -50,6 +61,7 @@ export default function BookDetails() {
         <div>
           <img
             src={book.images?.[0] || "https://via.placeholder.com/500"}
+            alt={book.title}
             className="
             rounded-xl
             w-full
@@ -72,26 +84,26 @@ export default function BookDetails() {
           </div>
 
           <p className="mt-3">
-            Author:
-            {book.author}
+            Author: {book.author}
           </p>
 
           <p
             className="
-          text-blue-600
-          text-2xl
-          font-bold
-          mt-5
-          "
+            text-blue-600
+            text-2xl
+            font-bold
+            mt-5
+            "
           >
             KES {book.price}
           </p>
 
-          <p className="mt-5">{book.description}</p>
+          <p className="mt-5">
+            {book.description}
+          </p>
 
           <p className="mt-4">
-            Condition:
-            {book.condition}
+            Condition: {book.condition}
           </p>
 
           <div
@@ -102,13 +114,15 @@ export default function BookDetails() {
             "
           >
             <button
-              onClick={() => addToCart(book)}
+              onClick={handleAddToCart}
               className="
               bg-blue-600
               text-white
               px-6
               py-3
               rounded
+              hover:bg-blue-700
+              transition
               "
             >
               Add To Cart

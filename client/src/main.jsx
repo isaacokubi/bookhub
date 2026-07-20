@@ -12,6 +12,9 @@ import { AuthProvider } from "./context/AuthContext";
 import { CartProvider } from "./context/CartContext";
 
 import { ThemeProvider } from "./context/ThemeContext";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import { FavoriteProvider } from "./context/FavoriteContext";
 
 import "./index.css";
 
@@ -23,9 +26,21 @@ ReactDOM.createRoot(document.getElementById("root")).render(
       <BrowserRouter>
         <ThemeProvider>
           <AuthProvider>
-            <CartProvider>
-              <App />
-            </CartProvider>
+            <FavoriteProvider>
+              <CartProvider>
+                <App />
+                <ToastContainer
+                  position="top-right"
+                  autoClose={3000}
+                  hideProgressBar={false}
+                  newestOnTop={true}
+                  closeOnClick
+                  pauseOnHover
+                  draggable
+                  theme="colored"
+                />
+              </CartProvider>
+            </FavoriteProvider>
           </AuthProvider>
         </ThemeProvider>
       </BrowserRouter>

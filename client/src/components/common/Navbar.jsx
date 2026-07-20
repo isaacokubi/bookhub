@@ -51,6 +51,7 @@ items-center
 "
         >
           <Link to="/books">Books</Link>
+          <Link to="/favorites">Favorites</Link>
 
           <Link to="/cart">Cart</Link>
 

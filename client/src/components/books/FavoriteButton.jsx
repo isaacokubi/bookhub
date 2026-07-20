@@ -1,58 +1,73 @@
+import { useState } from "react";
+import { toast } from "react-toastify";
+
 import {
-addFavorite
-}
-from "../../api/favoriteApi";
+  addFavorite,
+  removeFavorite,
+} from "../../api/favoriteApi";
 
 
+export default function FavoriteButton({ book }) {
 
-export default function FavoriteButton({
-bookId
-}){
-
-
-const save=
-async()=>{
-
-try{
-
-await addFavorite(bookId);
-
-alert(
-"Saved"
-);
-
-}
-catch{
-
-alert(
-"Already saved"
-);
-
-}
-
-};
+  const [favorite, setFavorite] = useState(false);
 
 
+  const handleFavorite = async () => {
 
-return (
+    try {
 
-<button
+      if (favorite) {
 
-onClick={save}
+        await removeFavorite(book._id);
 
-className="
-border
-px-4
-py-2
-rounded
-"
+        setFavorite(false);
 
->
+        toast.success(
+          "Removed from favorites"
+        );
 
-❤ Save
 
-</button>
+      } else {
 
-);
+        await addFavorite(book._id);
+
+        setFavorite(true);
+
+        toast.success(
+          "Added to favorites"
+        );
+
+      }
+
+
+    } catch (error) {
+
+      console.error(error);
+
+      toast.error(
+        "Something went wrong"
+      );
+
+    }
+
+  };
+
+
+  return (
+
+    <button
+      onClick={handleFavorite}
+      className="
+      text-2xl
+      hover:scale-110
+      transition
+      "
+    >
+
+      {favorite ? "❤️" : "🤍"}
+
+    </button>
+
+  );
 
 }

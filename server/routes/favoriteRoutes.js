@@ -1,19 +1,42 @@
 import express from "express";
 
-import auth from "../middleware/auth.js";
-
 import {
-  addFavorite,
-  removeFavorite,
-  myFavorites,
-} from "../controllers/favoriteController.js";
+addFavorite,
+getFavorites,
+removeFavorite
+}
+from "../controllers/favoriteController.js";
+
+
+import protect from "../middleware/auth.js";
+
 
 const router = express.Router();
 
-router.post("/", auth, addFavorite);
 
-router.delete("/:bookId", auth, removeFavorite);
 
-router.get("/", auth, myFavorites);
+router.get(
+"/",
+protect,
+getFavorites
+);
+
+
+
+router.post(
+"/bookId",
+protect,
+addFavorite
+);
+
+
+
+router.delete(
+"/:bookId",
+protect,
+removeFavorite
+);
+
+
 
 export default router;
