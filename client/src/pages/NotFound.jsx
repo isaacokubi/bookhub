@@ -1,58 +1,32 @@
-import {
-Link
-}
-from "react-router-dom";
+import { Link } from "react-router-dom";
 
-
-export default function NotFound(){
-
-
-return (
-
-<div
-className="
+export default function NotFound() {
+  return (
+    <div
+      className="
 text-center
 py-20
 "
->
-
-
-<h1
-className="
+    >
+      <h1
+        className="
 text-6xl
 font-bold
 "
->
+      >
+        404
+      </h1>
 
-404
+      <p>Page Not Found</p>
 
-</h1>
-
-
-<p>
-Page Not Found
-</p>
-
-
-
-<Link
-
-to="/"
-
-className="
+      <Link
+        to="/"
+        className="
 text-blue-600
 "
-
->
-
-Go Home
-
-</Link>
-
-
-</div>
-
-);
-
-
+      >
+        Go Home
+      </Link>
+    </div>
+  );
 }

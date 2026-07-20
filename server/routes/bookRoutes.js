@@ -1,100 +1,50 @@
 import express from "express";
 
-
 import {
-
-createBook,
-
-getBooks,
-
-getBook,
-
-updateBook,
-
-deleteBook,
-
-sellerBooks
-
-}
-
-from "../controllers/bookController.js";
-
-
+  createBook,
+  getBooks,
+  getBook,
+  updateBook,
+  deleteBook,
+  sellerBooks,
+} from "../controllers/bookController.js";
 
 import auth from "../middleware/auth.js";
 
 import upload from "../middleware/upload.js";
 
+const router = express.Router();
 
+router.get("/", getBooks);
 
-const router =
-express.Router();
+router.get("/seller", auth, sellerBooks);
 
-
-
-
-
-router.get(
-"/",
-getBooks
-);
-
-
-
-router.get(
-"/seller",
-auth,
-sellerBooks
-);
-
-
-
-router.get(
-"/:id",
-getBook
-);
-
-
+router.get("/:id", getBook);
 
 router.post(
+  "/",
 
-"/",
+  auth,
 
-auth,
+  upload.array("images", 5),
 
-upload.array(
-"images",
-5
-),
-
-createBook
-
+  createBook,
 );
-
-
 
 router.put(
+  "/:id",
 
-"/:id",
+  auth,
 
-auth,
-
-updateBook
-
+  updateBook,
 );
-
-
 
 router.delete(
+  "/:id",
 
-"/:id",
+  auth,
 
-auth,
-
-deleteBook
-
+  deleteBook,
 );
-
-
 
 export default router;

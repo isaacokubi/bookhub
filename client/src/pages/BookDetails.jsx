@@ -1,79 +1,37 @@
-import {
-  useEffect,
-  useState
-}
-from "react";
+import { useEffect, useState } from "react";
 
-import {
-  useParams,
-  Link
-}
-from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 
-import {
-  getBook
-}
-from "../api/bookApi";
+import { getBook } from "../api/bookApi";
 
-import {
-  useCart
-}
-from "../context/CartContext";
+import { useCart } from "../context/CartContext";
 
-import FavoriteButton
-from "../components/books/FavoriteButton";
+import FavoriteButton from "../components/books/FavoriteButton";
 
 export default function BookDetails() {
-
-  const {
-    id
-  } = useParams();
+  const { id } = useParams();
 
   const [book, setBook] = useState(null);
 
-  const {
-    addToCart
-  } = useCart();
+  const { addToCart } = useCart();
 
   useEffect(() => {
-
     loadBook();
-
   }, []);
 
   const loadBook = async () => {
-
     try {
-
-      const res =
-        await getBook(id);
+      const res = await getBook(id);
 
       setBook(res.data);
-
-    }
-
-    catch {
-
+    } catch {
       setBook(null);
-
     }
-
   };
 
-  if (!book)
-
-    return (
-
-      <div className="p-10">
-
-        Loading...
-
-      </div>
-
-    );
+  if (!book) return <div className="p-10">Loading...</div>;
 
   return (
-
     <div
       className="
       container
@@ -82,7 +40,6 @@ export default function BookDetails() {
       py-10
       "
     >
-
       <div
         className="
         grid
@@ -90,72 +47,51 @@ export default function BookDetails() {
         gap-10
         "
       >
-
         <div>
-
           <img
-
-            src={
-              book.images?.[0] ||
-              "https://via.placeholder.com/500"
-            }
-
+            src={book.images?.[0] || "https://via.placeholder.com/500"}
             className="
             rounded-xl
             w-full
             "
           />
-
         </div>
 
         <div>
-
           <div className="flex items-start justify-between gap-4">
-
             <h1
               className="
               text-4xl
               font-bold
               "
             >
-
               {book.title}
-
             </h1>
 
             <FavoriteButton book={book} />
-
           </div>
 
           <p className="mt-3">
-
             Author:
             {book.author}
-
           </p>
 
-          <p className="
+          <p
+            className="
           text-blue-600
           text-2xl
           font-bold
           mt-5
-          ">
-
+          "
+          >
             KES {book.price}
-
           </p>
 
-          <p className="mt-5">
-
-            {book.description}
-
-          </p>
+          <p className="mt-5">{book.description}</p>
 
           <p className="mt-4">
-
             Condition:
             {book.condition}
-
           </p>
 
           <div
@@ -165,11 +101,8 @@ export default function BookDetails() {
             mt-8
             "
           >
-
             <button
-
               onClick={() => addToCart(book)}
-
               className="
               bg-blue-600
               text-white
@@ -177,38 +110,24 @@ export default function BookDetails() {
               py-3
               rounded
               "
-
             >
-
               Add To Cart
-
             </button>
 
             <Link
-
               to="/checkout"
-
               className="
               border
               px-6
               py-3
               rounded
               "
-
             >
-
               Buy Now
-
             </Link>
-
           </div>
-
         </div>
-
       </div>
-
     </div>
-
   );
-
 }

@@ -1,78 +1,41 @@
 import mongoose from "mongoose";
 
+const withdrawalSchema = new mongoose.Schema(
+  {
+    seller: {
+      type: mongoose.Schema.Types.ObjectId,
 
-const withdrawalSchema =
-new mongoose.Schema({
+      ref: "User",
+    },
 
-seller:{
+    amount: {
+      type: Number,
 
-type:
-mongoose.Schema.Types.ObjectId,
+      required: true,
+    },
 
-ref:"User"
+    phone: String,
 
-},
+    status: {
+      type: String,
 
+      enum: ["Pending", "Approved", "Rejected", "Completed"],
 
-amount:{
+      default: "Pending",
+    },
 
-type:Number,
+    processedBy: {
+      type: mongoose.Schema.Types.ObjectId,
 
-required:true
+      ref: "User",
+    },
 
-},
+    notes: String,
+  },
 
-
-phone:String,
-
-
-status:{
-
-type:String,
-
-enum:[
-
-"Pending",
-
-"Approved",
-
-"Rejected",
-
-"Completed"
-
-],
-
-default:"Pending"
-
-},
-
-
-processedBy:{
-
-type:
-mongoose.Schema.Types.ObjectId,
-
-ref:"User"
-
-},
-
-
-notes:String
-
-
-},
-
-{
-
-timestamps:true
-
-}
-
+  {
+    timestamps: true,
+  },
 );
 
-
-
-export default mongoose.model(
-"Withdrawal",
-withdrawalSchema
-);
+export default mongoose.model("Withdrawal", withdrawalSchema);

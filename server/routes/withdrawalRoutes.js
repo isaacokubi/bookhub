@@ -2,46 +2,27 @@ import express from "express";
 
 import auth from "../middleware/auth.js";
 
-
 import {
+  requestWithdrawal,
+  myWithdrawals,
+} from "../controllers/withdrawalController.js";
 
-requestWithdrawal,
-
-myWithdrawals
-
-}
-
-from "../controllers/withdrawalController.js";
-
-
-
-const router =
-express.Router();
-
-
+const router = express.Router();
 
 router.post(
+  "/",
 
-"/",
+  auth,
 
-auth,
-
-requestWithdrawal
-
+  requestWithdrawal,
 );
-
-
 
 router.get(
+  "/",
 
-"/",
+  auth,
 
-auth,
-
-myWithdrawals
-
+  myWithdrawals,
 );
-
-
 
 export default router;

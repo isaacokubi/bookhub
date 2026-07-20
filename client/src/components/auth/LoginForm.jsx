@@ -1,154 +1,79 @@
-import {
-useState
-}
-from "react";
+import { useState } from "react";
 
+import { loginUser } from "../../api/authApi";
 
-import {
-loginUser
-}
-from "../../api/authApi";
+import { useNavigate } from "react-router-dom";
 
+import { useAuth } from "../../context/AuthContext";
 
-import {
-useNavigate
-}
-from "react-router-dom";
+export default function LoginForm() {
+  const navigate = useNavigate();
 
+  const { login } = useAuth();
 
-import {
-useAuth
-}
-from "../../context/AuthContext";
+  const [form, setForm] = useState({
+    email: "",
+    password: "",
+  });
 
+  const submit = async (e) => {
+  e.preventDefault();
 
+  try {
+    const data = await loginUser(form);
 
-export default function LoginForm(){
+    login(data);
 
+    navigate("/");
+  } catch (err) {
+    console.error(err);
 
-const navigate=useNavigate();
-
-const {
-setUser
-}=useAuth();
-
-
-
-const [form,setForm]=useState({
-
-email:"",
-password:""
-
-});
-
-
-
-const submit=async(e)=>{
-
-
-e.preventDefault();
-
-
-
-try{
-
-
-const res =
-await loginUser(form);
-
-
-
-localStorage.setItem(
-"token",
-res.data.token
-);
-
-
-
-setUser(res.data.user);
-
-
-
-navigate("/");
-
-
-}
-catch(err){
-
-alert(
-err.response?.data?.message ||
-"Login failed"
-);
-
-}
-
-
+    alert(err.response?.data?.message || "Login failed");
+  }
 };
 
-
-
-return (
-
-<form
-onSubmit={submit}
-className="
+  return (
+    <form
+      onSubmit={submit}
+      className="
 space-y-4
 "
->
-
-
-<input
-
-className="
+    >
+      <input
+        className="
 border
 p-3
 w-full
 rounded
 "
+        placeholder="Email"
+        onChange={(e) =>
+          setForm({
+            ...form,
+            email: e.target.value,
+          })
+        }
+      />
 
-placeholder="Email"
-
-onChange={
-e=>
-setForm({
-...form,
-email:e.target.value
-})
-}
-
-/>
-
-
-
-<input
-
-type="password"
-
-className="
+      <input
+        type="password"
+        className="
 border
 p-3
 w-full
 rounded
 "
+        placeholder="Password"
+        onChange={(e) =>
+          setForm({
+            ...form,
+            password: e.target.value,
+          })
+        }
+      />
 
-placeholder="Password"
-
-
-onChange={
-e=>
-setForm({
-...form,
-password:e.target.value
-})
-}
-
-/>
-
-
-
-<button
-
-className="
+      <button
+        className="
 bg-blue-600
 text-white
 px-5
@@ -156,18 +81,9 @@ py-3
 rounded
 w-full
 "
-
->
-
-Login
-
-</button>
-
-
-
-</form>
-
-);
-
-
+      >
+        Login
+      </button>
+    </form>
+  );
 }

@@ -1,62 +1,37 @@
 import express from "express";
 
-
 import auth from "../middleware/auth.js";
 
-
 import {
+  createConversation,
+  sendMessage,
+  getMessages,
+} from "../controllers/messageController.js";
 
-createConversation,
-
-sendMessage,
-
-getMessages
-
-}
-
-from "../controllers/messageController.js";
-
-
-
-const router =
-express.Router();
-
-
+const router = express.Router();
 
 router.post(
+  "/conversation",
 
-"/conversation",
+  auth,
 
-auth,
-
-createConversation
-
+  createConversation,
 );
-
-
 
 router.post(
+  "/",
 
-"/",
+  auth,
 
-auth,
-
-sendMessage
-
+  sendMessage,
 );
-
-
 
 router.get(
+  "/:id",
 
-"/:id",
+  auth,
 
-auth,
-
-getMessages
-
+  getMessages,
 );
-
-
 
 export default router;

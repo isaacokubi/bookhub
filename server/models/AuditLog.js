@@ -1,33 +1,30 @@
 import mongoose from "mongoose";
 
-const auditLogSchema =
-new mongoose.Schema({
+const auditLogSchema = new mongoose.Schema(
+  {
+    admin: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
 
-admin:{
-type:mongoose.Schema.Types.ObjectId,
-ref:"User"
-},
+    action: {
+      type: String,
+      required: true,
+    },
 
-action:{
-type:String,
-required:true
-},
+    targetType: {
+      type: String,
+    },
 
-targetType:{
-type:String
-},
+    targetId: {
+      type: String,
+    },
 
-targetId:{
-type:String
-},
-
-details:Object
-
-},{
-timestamps:true
-});
-
-export default mongoose.model(
-"AuditLog",
-auditLogSchema
+    details: Object,
+  },
+  {
+    timestamps: true,
+  },
 );
+
+export default mongoose.model("AuditLog", auditLogSchema);

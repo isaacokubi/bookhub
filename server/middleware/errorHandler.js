@@ -1,27 +1,7 @@
-export default function errorHandler(
-err,
-req,
-res,
-next
-){
+export default function errorHandler(err, req, res, next) {
+  console.log(err);
 
-
-console.log(err);
-
-
-
-res.status(
-
-err.statusCode || 500
-
-)
-.json({
-
-message:
-err.message ||
-"Server Error"
-
-});
-
-
+  res.status(err.statusCode || 500).json({
+    message: err.message || "Server Error",
+  });
 }

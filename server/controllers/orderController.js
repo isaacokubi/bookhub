@@ -2,165 +2,82 @@ import Order from "../models/Order.js";
 
 import User from "../models/User.js";
 
-import {
-calculateCommission
-}
-from "../utils/commission.js";
+import { calculateCommission } from "../utils/commission.js";
 
-import {
-createNotification
-}
-from "../utils/createNotification.js";
+import { createNotification } from "../utils/createNotification.js";
 
-import {
-sendEmail
-}
-from "../services/emailService.js";
+import { sendEmail } from "../services/emailService.js";
 
-import {
-orderCreated
-}
-from "../templates/orderCreated.js";
+import { orderCreated } from "../templates/orderCreated.js";
 
+export const createOrder = async (req, res) => {
+  const {
+    items,
 
+    amount,
 
-export const createOrder =
-async(req,res)=>{
+    seller,
+  } = req.body;
 
+  const {
+    fee,
 
-const {
+    sellerAmount,
+  } = calculateCommission(amount);
 
-items,
+  const order = await Order.create({
+    buyer: req.user._id,
 
-amount,
+    seller,
 
-seller
+    items,
 
-}=req.body;
+    amount,
 
+    platformFee: fee,
 
+    sellerAmount,
+  });
 
-const {
+  await createNotification({
+    user: req.user._id,
 
-fee,
+    title: "Order Created",
 
-sellerAmount
+    message: "Your order was created successfully.",
 
-}=calculateCommission(amount);
+    type: "ORDER",
 
+    link: `/orders/${order._id}`,
+  });
 
+  // Send order confirmation email
 
-const order =
-await Order.create({
+  const buyer = await User.findById(req.user._id);
 
-buyer:req.user._id,
+  await sendEmail(
+    buyer.email,
 
+    "Order Created",
 
-seller,
+    orderCreatedTemplate(order),
+  );
 
-
-items,
-
-
-amount,
-
-
-platformFee:fee,
-
-
-sellerAmount
-
-
-});
-
-
-
-await createNotification({
-
-user:req.user._id,
-
-title:"Order Created",
-
-message:"Your order was created successfully.",
-
-type:"ORDER",
-
-link:`/orders/${order._id}`
-
-});
-
-
-
-// Send order confirmation email
-
-const buyer =
-await User.findById(
-req.user._id
-);
-
-
-
-await sendEmail(
-
-buyer.email,
-
-"Order Created",
-
-orderCreatedTemplate(order)
-
-);
-
-
-
-res.status(201)
-.json(order);
-
-
+  res.status(201).json(order);
 };
 
+export const myOrders = async (req, res) => {
+  const orders = await Order.find({
+    buyer: req.user._id,
+  }).populate("items.book");
 
-
-
-
-export const myOrders =
-async(req,res)=>{
-
-
-const orders =
-await Order.find({
-
-buyer:req.user._id
-
-})
-.populate(
-"items.book"
-);
-
-
-
-res.json(orders);
-
-
+  res.json(orders);
 };
 
+export const sellerOrders = async (req, res) => {
+  const orders = await Order.find({
+    seller: req.user._id,
+  });
 
-
-
-
-export const sellerOrders =
-async(req,res)=>{
-
-
-const orders =
-await Order.find({
-
-seller:req.user._id
-
-});
-
-
-
-res.json(orders);
-
-
+  res.json(orders);
 };

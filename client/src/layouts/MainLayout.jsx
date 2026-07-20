@@ -1,43 +1,26 @@
 import Navbar from "../components/common/Navbar";
 import Footer from "../components/common/Footer";
 
-
-export default function MainLayout({
-children
-}){
-
-
-return (
-
-<div
-className="
+export default function MainLayout({ children }) {
+  return (
+    <div
+      className="
 min-h-screen
 flex
 flex-col
 "
->
+    >
+      <Navbar />
 
-
-<Navbar/>
-
-
-<main
-className="
+      <main
+        className="
 flex-1
 "
->
+      >
+        {children}
+      </main>
 
-{children}
-
-</main>
-
-
-<Footer/>
-
-
-</div>
-
-);
-
-
+      <Footer />
+    </div>
+  );
 }

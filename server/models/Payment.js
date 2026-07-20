@@ -1,77 +1,42 @@
 import mongoose from "mongoose";
 
+const paymentSchema = new mongoose.Schema(
+  {
+    order: {
+      type: mongoose.Schema.Types.ObjectId,
 
-const paymentSchema =
-new mongoose.Schema({
+      ref: "Order",
+    },
 
-order:{
+    merchantRequestID: String,
 
-type:
-mongoose.Schema.Types.ObjectId,
+    checkoutRequestID: String,
 
-ref:"Order"
+    mpesaReceiptNumber: String,
 
-},
+    amount: Number,
 
+    phone: String,
 
-merchantRequestID:String,
+    resultCode: String,
 
+    resultDesc: String,
 
-checkoutRequestID:String,
+    transactionDate: String,
 
+    rawResponse: Object,
 
-mpesaReceiptNumber:String,
+    status: {
+      type: String,
 
+      enum: ["Pending", "Success", "Failed"],
 
-amount:Number,
-
-
-phone:String,
-
-
-resultCode:String,
-
-
-resultDesc:String,
-
-
-transactionDate:String,
-
-
-rawResponse:Object,
-
-
-status:{
-
-
-type:String,
-
-
-enum:[
-
-"Pending",
-
-"Success",
-
-"Failed"
-
-],
-
-
-default:"Pending"
-
-
-}
-
-
-},{
-
-timestamps:true
-
-});
-
-
-export default mongoose.model(
-"Payment",
-paymentSchema
+      default: "Pending",
+    },
+  },
+  {
+    timestamps: true,
+  },
 );
+
+export default mongoose.model("Payment", paymentSchema);

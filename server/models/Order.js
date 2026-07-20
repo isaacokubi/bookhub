@@ -1,140 +1,81 @@
 import mongoose from "mongoose";
 
+const orderSchema = new mongoose.Schema(
+  {
+    buyer: {
+      type: mongoose.Schema.Types.ObjectId,
 
-const orderSchema =
-new mongoose.Schema({
+      ref: "User",
 
-buyer:{
+      required: true,
+    },
 
-type:
-mongoose.Schema.Types.ObjectId,
+    seller: {
+      type: mongoose.Schema.Types.ObjectId,
 
-ref:"User",
+      ref: "User",
+    },
 
-required:true
+    items: [
+      {
+        book: {
+          type: mongoose.Schema.Types.ObjectId,
 
-},
+          ref: "Book",
+        },
 
+        title: String,
 
-seller:{
+        quantity: Number,
 
-type:
-mongoose.Schema.Types.ObjectId,
+        price: Number,
+      },
+    ],
 
-ref:"User"
+    amount: {
+      type: Number,
 
-},
+      required: true,
+    },
 
+    sellerAmount: Number,
 
+    platformFee: Number,
 
-items:[{
+    status: {
+      type: String,
 
-book:{
+      enum: [
+        "Pending",
 
-type:
-mongoose.Schema.Types.ObjectId,
+        "Paid",
 
-ref:"Book"
+        "Processing",
 
-},
+        "Shipped",
 
+        "Delivered",
 
-title:String,
+        "Cancelled",
 
+        "Refunded",
+      ],
 
-quantity:Number,
+      default: "Pending",
+    },
 
+    paymentStatus: {
+      type: String,
 
-price:Number
+      enum: ["Pending", "Paid", "Failed"],
 
-}],
+      default: "Pending",
+    },
+  },
 
-
-
-amount:{
-
-type:Number,
-
-required:true
-
-},
-
-
-
-sellerAmount:Number,
-
-
-platformFee:Number,
-
-
-
-status:{
-
-
-type:String,
-
-
-enum:[
-
-"Pending",
-
-"Paid",
-
-"Processing",
-
-"Shipped",
-
-"Delivered",
-
-"Cancelled",
-
-"Refunded"
-
-],
-
-
-default:"Pending"
-
-
-},
-
-
-
-paymentStatus:{
-
-
-type:String,
-
-
-enum:[
-
-"Pending",
-
-"Paid",
-
-"Failed"
-
-],
-
-
-default:"Pending"
-
-}
-
-
-
-},
-
-{
-
-timestamps:true
-
-}
-
+  {
+    timestamps: true,
+  },
 );
 
-
-export default mongoose.model(
-"Order",
-orderSchema
-);
+export default mongoose.model("Order", orderSchema);

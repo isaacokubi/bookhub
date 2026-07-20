@@ -1,69 +1,33 @@
-import {
-useEffect,
-useState
-}
-from "react";
+import { useEffect, useState } from "react";
 
-import {
-Bell
-}
-from "lucide-react";
+import { Bell } from "lucide-react";
 
-import {
-getUnreadCount
-}
-from "../../api/notificationApi";
+import { getUnreadCount } from "../../api/notificationApi";
 
+export default function NotificationBell() {
+  const [count, setCount] = useState(0);
 
+  useEffect(() => {
+    load();
+  }, []);
 
-export default function NotificationBell(){
+  const load = async () => {
+    const res = await getUnreadCount();
 
+    setCount(res.data.count);
+  };
 
-const [
-count,
-setCount
-]=useState(0);
-
-
-
-useEffect(()=>{
-
-load();
-
-},[]);
-
-
-
-const load=
-async()=>{
-
-const res=
-await getUnreadCount();
-
-setCount(
-res.data.count
-);
-
-};
-
-
-
-return (
-
-<div
-className="
+  return (
+    <div
+      className="
 relative
 "
->
+    >
+      <Bell />
 
-<Bell />
-
-{
-count > 0 && (
-
-<span
-
-className="
+      {count > 0 && (
+        <span
+          className="
 absolute
 -top-2
 -right-2
@@ -73,19 +37,10 @@ rounded-full
 text-xs
 px-2
 "
-
->
-
-{count}
-
-</span>
-
-)
-
-}
-
-</div>
-
-);
-
+        >
+          {count}
+        </span>
+      )}
+    </div>
+  );
 }

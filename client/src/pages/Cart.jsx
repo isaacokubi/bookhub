@@ -1,114 +1,55 @@
-import {
-useCart
-}
-from "../context/CartContext";
+import { useCart } from "../context/CartContext";
 
+export default function Cart() {
+  const { cart, removeFromCart } = useCart();
 
-export default function Cart(){
+  const total = cart.reduce((sum, item) => sum + item.price, 0);
 
-
-const {
-cart,
-removeFromCart
-}=useCart();
-
-
-
-const total =
-cart.reduce(
-(sum,item)=>sum+item.price,
-0
-);
-
-
-
-return (
-
-<div
-className="
+  return (
+    <div
+      className="
 container
 mx-auto
 py-10
 "
->
-
-
-<h1 className="
+    >
+      <h1
+        className="
 text-3xl
 font-bold
 "
->
+      >
+        Shopping Cart
+      </h1>
 
-Shopping Cart
-
-</h1>
-
-
-
-{
-cart.map(item=>(
-
-<div
-key={item._id}
-className="
+      {cart.map((item) => (
+        <div
+          key={item._id}
+          className="
 border
 p-4
 my-3
 flex
 justify-between
 "
->
+        >
+          <span>{item.title}</span>
 
+          <span>KES {item.price}</span>
 
-<span>
-{item.title}
-</span>
+          <button onClick={() => removeFromCart(item._id)}>Remove</button>
+        </div>
+      ))}
 
-
-<span>
-KES {item.price}
-</span>
-
-
-
-<button
-
-onClick={()=>
-removeFromCart(item._id)
-}
-
->
-
-Remove
-
-</button>
-
-
-</div>
-
-))
-
-}
-
-
-
-<h2
-className="
+      <h2
+        className="
 font-bold
 text-xl
 mt-5
 "
->
-
-Total:
-KES {total}
-
-</h2>
-
-
-</div>
-
-);
-
-
+      >
+        Total: KES {total}
+      </h2>
+    </div>
+  );
 }

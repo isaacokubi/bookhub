@@ -1,34 +1,13 @@
 export default {
+  consumerKey: process.env.MPESA_CONSUMER_KEY,
 
+  consumerSecret: process.env.MPESA_CONSUMER_SECRET,
 
-consumerKey:
+  shortCode: process.env.MPESA_SHORTCODE,
 
-process.env.MPESA_CONSUMER_KEY,
+  passKey: process.env.MPESA_PASSKEY,
 
+  callbackURL: process.env.MPESA_CALLBACK_URL,
 
-consumerSecret:
-
-process.env.MPESA_CONSUMER_SECRET,
-
-
-shortCode:
-
-process.env.MPESA_SHORTCODE,
-
-
-passKey:
-
-process.env.MPESA_PASSKEY,
-
-
-callbackURL:
-
-process.env.MPESA_CALLBACK_URL,
-
-
-environment:
-
-process.env.MPESA_ENV || "sandbox"
-
-
+  environment: process.env.MPESA_ENV || "sandbox",
 };

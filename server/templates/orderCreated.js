@@ -1,6 +1,5 @@
 export const orderCreated = (order) => {
-
-return `
+  return `
 <!DOCTYPE html>
 <html>
 
@@ -47,5 +46,4 @@ Thank you for shopping at BookHub Kenya.
 
 </html>
 `;
-
 };

@@ -2,45 +2,24 @@ import express from "express";
 
 import auth from "../middleware/auth.js";
 
-import {
+import { myWallet, releaseFunds } from "../controllers/walletController.js";
 
-myWallet,
-
-releaseFunds
-
-}
-
-from "../controllers/walletController.js";
-
-
-
-const router =
-express.Router();
-
-
+const router = express.Router();
 
 router.get(
+  "/",
 
-"/",
+  auth,
 
-auth,
-
-myWallet
-
+  myWallet,
 );
-
-
 
 router.put(
+  "/release/:id",
 
-"/release/:id",
+  auth,
 
-auth,
-
-releaseFunds
-
+  releaseFunds,
 );
-
-
 
 export default router;

@@ -1,19 +1,9 @@
-export default function Modal({
-open,
-children,
-close
-}){
+export default function Modal({ open, children, close }) {
+  if (!open) return null;
 
-
-if(!open)
-return null;
-
-
-
-return (
-
-<div
-className="
+  return (
+    <div
+      className="
 fixed
 inset-0
 bg-black/50
@@ -21,38 +11,26 @@ flex
 items-center
 justify-center
 "
->
-
-
-<div
-className="
+    >
+      <div
+        className="
 bg-white
 dark:bg-slate-900
 p-6
 rounded-xl
 "
->
-
-
-<button
-onClick={close}
-className="
+      >
+        <button
+          onClick={close}
+          className="
 float-right
 "
->
-X
-</button>
+        >
+          X
+        </button>
 
-
-{children}
-
-
-</div>
-
-
-</div>
-
-);
-
-
+        {children}
+      </div>
+    </div>
+  );
 }

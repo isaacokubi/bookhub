@@ -4,176 +4,70 @@ import moment from "moment";
 
 import mpesaConfig from "../config/mpesa.js";
 
+export const getMpesaToken = async () => {
+  const auth = Buffer.from(
+    `${mpesaConfig.consumerKey}:${mpesaConfig.consumerSecret}`,
+  )
 
+    .toString("base64");
 
-export const getMpesaToken =
-async()=>{
+  const response = await axios.get(
+    "https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials",
 
+    {
+      headers: {
+        Authorization: `Basic ${auth}`,
+      },
+    },
+  );
 
-const auth =
-Buffer.from(
-
-`${mpesaConfig.consumerKey}:${mpesaConfig.consumerSecret}`
-
-)
-
-.toString("base64");
-
-
-
-const response =
-await axios.get(
-
-"https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials",
-
-{
-
-headers:{
-
-Authorization:
-`Basic ${auth}`
-
-}
-
-}
-
-);
-
-
-
-return response.data.access_token;
-
-
+  return response.data.access_token;
 };
 
+export const stkPush = async (phone, amount, reference) => {
+  const token = await getMpesaToken();
 
+  const timestamp = moment().format("YYYYMMDDHHmmss");
 
+  const password = Buffer.from(
+    mpesaConfig.shortCode + mpesaConfig.passKey + timestamp,
+  )
 
+    .toString("base64");
 
-export const stkPush =
-async(
-phone,
-amount,
-reference
-)=>{
+  const response = await axios.post(
+    "https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest",
 
+    {
+      BusinessShortCode: mpesaConfig.shortCode,
 
-const token =
-await getMpesaToken();
+      Password: password,
 
+      Timestamp: timestamp,
 
+      TransactionType: "CustomerPayBillOnline",
 
-const timestamp =
-moment()
-.format(
-"YYYYMMDDHHmmss"
-);
+      Amount: amount,
 
+      PartyA: phone,
 
+      PartyB: mpesaConfig.shortCode,
 
-const password =
-Buffer.from(
+      PhoneNumber: phone,
 
-mpesaConfig.shortCode +
+      CallBackURL: mpesaConfig.callbackURL,
 
-mpesaConfig.passKey +
+      AccountReference: reference,
 
-timestamp
+      TransactionDesc: "BookHub Kenya Purchase",
+    },
 
-)
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    },
+  );
 
-.toString("base64");
-
-
-
-
-
-const response =
-await axios.post(
-
-"https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest",
-
-
-{
-
-BusinessShortCode:
-
-mpesaConfig.shortCode,
-
-
-Password:
-
-password,
-
-
-Timestamp:
-
-timestamp,
-
-
-TransactionType:
-
-"CustomerPayBillOnline",
-
-
-Amount:
-
-amount,
-
-
-PartyA:
-
-phone,
-
-
-PartyB:
-
-mpesaConfig.shortCode,
-
-
-PhoneNumber:
-
-phone,
-
-
-CallBackURL:
-
-mpesaConfig.callbackURL,
-
-
-AccountReference:
-
-reference,
-
-
-TransactionDesc:
-
-"BookHub Kenya Purchase"
-
-
-},
-
-
-
-{
-
-headers:{
-
-Authorization:
-
-`Bearer ${token}`
-
-}
-
-}
-
-
-
-);
-
-
-
-return response.data;
-
-
+  return response.data;
 };

@@ -3,41 +3,28 @@ import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import xss from "xss";
 
+export const securityMiddleware = (app) => {
+  app.use(helmet());
 
-export const securityMiddleware = (app)=>{
+  // app.use(mongoSanitize());
 
-    app.use(helmet());
-
-    // app.use(mongoSanitize());
-
-
-    app.use((req,res,next)=>{
-
-        if(req.body){
-
-            Object.keys(req.body).forEach(key=>{
-
-                if(typeof req.body[key] === "string"){
-
-                    req.body[key] = xss(req.body[key]);
-
-                }
-
-            });
-
+  app.use((req, res, next) => {
+    if (req.body) {
+      Object.keys(req.body).forEach((key) => {
+        if (typeof req.body[key] === "string") {
+          req.body[key] = xss(req.body[key]);
         }
+      });
+    }
 
-        next();
+    next();
+  });
 
-    });
+  app.use(
+    rateLimit({
+      windowMs: 15 * 60 * 1000,
 
-
-    app.use(rateLimit({
-
-        windowMs:15 * 60 * 1000,
-
-        max:100
-
-    }));
-
+      max: 100,
+    }),
+  );
 };

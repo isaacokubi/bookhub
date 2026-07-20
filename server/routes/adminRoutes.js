@@ -2,131 +2,48 @@ import express from "express";
 
 import auth from "../middleware/auth.js";
 
-import {
-authorize
-}
-from "../middleware/role.js";
+import { authorize } from "../middleware/role.js";
 
 import {
+  dashboard,
+  users,
+  suspendUser,
+  activateUser,
+  deleteUser,
+  pendingBooks,
+  approveBook,
+  rejectBook,
+  payments,
+  payouts,
+  approvePayout,
+} from "../controllers/adminController.js";
 
-dashboard,
+const router = express.Router();
 
-users,
+router.use(auth);
 
-suspendUser,
+router.use(authorize("admin"));
 
-activateUser,
+router.get("/dashboard", dashboard);
 
-deleteUser,
+router.get("/users", users);
 
-pendingBooks,
+router.put("/users/:id/suspen5173d", suspendUser);
 
-approveBook,
+router.put("/users/:id/activate", activateUser);
 
-rejectBook,
+router.delete("/users/:id", deleteUser);
 
-payments,
+router.get("/books/pending", pendingBooks);
 
-payouts,
+router.put("/books/:id/approve", approveBook);
 
-approvePayout
+router.put("/books/:id/reject", rejectBook);
 
-}
+router.get("/payments", payments);
 
-from "../controllers/adminController.js";
+router.get("/payouts", payouts);
 
-
-
-const router =
-express.Router();
-
-
-
-router.use(
-auth
-);
-
-router.use(
-authorize("admin")
-);
-
-
-
-router.get(
-"/dashboard",
-dashboard
-);
-
-
-
-router.get(
-"/users",
-users
-);
-
-
-
-router.put(
-"/users/:id/suspend",
-suspendUser
-);
-
-
-
-router.put(
-"/users/:id/activate",
-activateUser
-);
-
-
-
-router.delete(
-"/users/:id",
-deleteUser
-);
-
-
-
-router.get(
-"/books/pending",
-pendingBooks
-);
-
-
-
-router.put(
-"/books/:id/approve",
-approveBook
-);
-
-
-
-router.put(
-"/books/:id/reject",
-rejectBook
-);
-
-
-
-router.get(
-"/payments",
-payments
-);
-
-
-
-router.get(
-"/payouts",
-payouts
-);
-
-
-
-router.put(
-"/payouts/:id/approve",
-approvePayout
-);
-
-
+router.put("/payouts/:id/approve", approvePayout);
 
 export default router;

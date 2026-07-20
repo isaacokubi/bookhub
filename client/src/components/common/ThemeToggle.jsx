@@ -1,38 +1,9 @@
-import {
-useTheme
-}
-from "../../context/ThemeContext";
+import { useTheme } from "../../context/ThemeContext";
 
+export default function ThemeToggle() {
+  const { dark, setDark } = useTheme();
 
-export default function ThemeToggle(){
-
-
-const {
-dark,
-setDark
-}
-=
-useTheme();
-
-
-
-return (
-
-<button
-
-onClick={()=>setDark(!dark)}
-
->
-
-{
-dark?
-"Light":
-"Dark"
-}
-
-</button>
-
-
-);
-
+  return (
+    <button onClick={() => setDark(!dark)}>{dark ? "Light" : "Dark"}</button>
+  );
 }

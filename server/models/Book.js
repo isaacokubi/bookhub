@@ -1,170 +1,93 @@
 import mongoose from "mongoose";
 
+const bookSchema = new mongoose.Schema(
+  {
+    title: {
+      type: String,
 
+      required: true,
 
-const bookSchema =
-new mongoose.Schema(
+      trim: true,
+    },
 
-{
+    author: {
+      type: String,
 
+      required: true,
+    },
 
-title:{
+    ISBN: String,
 
-type:String,
+    description: String,
 
-required:true,
+    price: {
+      type: Number,
 
-trim:true
+      required: true,
+    },
 
-},
+    condition: {
+      type: String,
 
+      enum: ["New", "Like New", "Used"],
 
+      default: "Used",
+    },
 
-author:{
+    category: {
+      type: mongoose.Schema.Types.ObjectId,
 
-type:String,
+      ref: "Category",
+    },
 
-required:true
+    language: {
+      type: String,
 
-},
+      default: "English",
+    },
 
+    quantity: {
+      type: Number,
 
+      default: 1,
+    },
 
-ISBN:String,
+    location: String,
 
+    deliveryOptions: [String],
 
+    images: [String],
 
-description:String,
+    seller: {
+      type: mongoose.Schema.Types.ObjectId,
 
+      ref: "User",
 
+      required: true,
+    },
 
-price:{
+    status: {
+      type: String,
 
-type:Number,
+      enum: ["pending", "approved", "rejected"],
 
-required:true
+      default: "pending",
+    },
 
-},
+    views: {
+      type: Number,
 
+      default: 0,
+    },
+  },
 
-
-condition:{
-
-type:String,
-
-enum:[
-
-"New",
-"Like New",
-"Used"
-
-],
-
-default:"Used"
-
-},
-
-
-
-category:{
-
-type:
-mongoose.Schema.Types.ObjectId,
-
-ref:"Category"
-
-},
-
-
-
-language:{
-
-type:String,
-
-default:"English"
-
-},
-
-
-
-quantity:{
-
-type:Number,
-
-default:1
-
-},
-
-
-
-location:String,
-
-
-
-deliveryOptions:[String],
-
-
-
-images:[String],
-
-
-
-seller:{
-
-type:
-mongoose.Schema.Types.ObjectId,
-
-ref:"User",
-
-required:true
-
-},
-
-
-
-status:{
-
-type:String,
-
-enum:[
-
-"pending",
-"approved",
-"rejected"
-
-],
-
-default:"pending"
-
-},
-
-
-
-views:{
-
-type:Number,
-
-default:0
-
-}
-
-
-
-},
-
-{
-timestamps:true
-}
-
-
+  {
+    timestamps: true,
+  },
 );
 
-
-
 export default mongoose.model(
+  "Book",
 
-"Book",
-
-bookSchema
-
+  bookSchema,
 );

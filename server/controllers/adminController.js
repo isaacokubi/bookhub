@@ -5,361 +5,199 @@ import Payment from "../models/Payment.js";
 import Payout from "../models/Payout.js";
 import AuditLog from "../models/AuditLog.js";
 
+export const dashboard = async (req, res) => {
+  const totalUsers = await User.countDocuments();
 
+  const totalBooks = await Book.countDocuments();
 
-export const dashboard =
-async(req,res)=>{
+  const totalOrders = await Order.countDocuments();
 
-const totalUsers =
-await User.countDocuments();
+  const totalPayments = await Payment.countDocuments();
 
-const totalBooks =
-await Book.countDocuments();
+  const revenueAgg = await Order.aggregate([
+    {
+      $group: {
+        _id: null,
+        revenue: {
+          $sum: "$platformFee",
+        },
+      },
+    },
+  ]);
 
-const totalOrders =
-await Order.countDocuments();
+  res.json({
+    totalUsers,
 
-const totalPayments =
-await Payment.countDocuments();
+    totalBooks,
 
-const revenueAgg =
-await Order.aggregate([
+    totalOrders,
 
-{
-$group:{
-_id:null,
-revenue:{
-$sum:"$platformFee"
-}
-}
-}
+    totalPayments,
 
-]);
-
-
-
-res.json({
-
-totalUsers,
-
-totalBooks,
-
-totalOrders,
-
-totalPayments,
-
-revenue:
-revenueAgg[0]?.revenue || 0
-
-});
-
+    revenue: revenueAgg[0]?.revenue || 0,
+  });
 };
 
+export const users = async (req, res) => {
+  const result = await User.find().select("-password");
 
-
-
-
-export const users =
-async(req,res)=>{
-
-const result =
-await User.find()
-.select("-password");
-
-res.json(result);
-
+  res.json(result);
 };
 
+export const suspendUser = async (req, res) => {
+  const user = await User.findByIdAndUpdate(
+    req.params.id,
 
+    {
+      isActive: false,
+    },
 
+    {
+      new: true,
+    },
+  );
 
+  await AuditLog.create({
+    admin: req.user._id,
 
-export const suspendUser =
-async(req,res)=>{
+    action: "SUSPEND_USER",
 
-const user =
-await User.findByIdAndUpdate(
+    targetId: user._id,
+  });
 
-req.params.id,
-
-{
-isActive:false
-},
-
-{
-new:true
-}
-
-);
-
-
-
-await AuditLog.create({
-
-admin:req.user._id,
-
-action:"SUSPEND_USER",
-
-targetId:user._id
-
-});
-
-
-
-res.json(user);
-
+  res.json(user);
 };
 
+export const activateUser = async (req, res) => {
+  const user = await User.findByIdAndUpdate(
+    req.params.id,
 
+    {
+      isActive: true,
+    },
 
+    {
+      new: true,
+    },
+  );
 
+  await AuditLog.create({
+    admin: req.user._id,
 
-export const activateUser =
-async(req,res)=>{
+    action: "ACTIVATE_USER",
 
-const user =
-await User.findByIdAndUpdate(
+    targetId: user._id,
+  });
 
-req.params.id,
-
-{
-isActive:true
-},
-
-{
-new:true
-}
-
-);
-
-
-
-await AuditLog.create({
-
-admin:req.user._id,
-
-action:"ACTIVATE_USER",
-
-targetId:user._id
-
-});
-
-
-
-res.json(user);
-
+  res.json(user);
 };
 
+export const deleteUser = async (req, res) => {
+  await User.findByIdAndDelete(req.params.id);
 
+  await AuditLog.create({
+    admin: req.user._id,
 
+    action: "DELETE_USER",
 
+    targetId: req.params.id,
+  });
 
-export const deleteUser =
-async(req,res)=>{
-
-await User.findByIdAndDelete(
-req.params.id
-);
-
-
-
-await AuditLog.create({
-
-admin:req.user._id,
-
-action:"DELETE_USER",
-
-targetId:req.params.id
-
-});
-
-
-
-res.json({
-
-message:"Deleted"
-
-});
-
+  res.json({
+    message: "Deleted",
+  });
 };
 
+export const pendingBooks = async (req, res) => {
+  const books = await Book.find({
+    status: "pending",
+  }).populate("seller", "name");
 
-
-
-
-export const pendingBooks =
-async(req,res)=>{
-
-const books =
-await Book.find({
-
-status:"pending"
-
-})
-.populate(
-"seller",
-"name"
-);
-
-res.json(books);
-
+  res.json(books);
 };
 
+export const approveBook = async (req, res) => {
+  const book = await Book.findByIdAndUpdate(
+    req.params.id,
 
+    {
+      status: "approved",
+    },
 
+    {
+      new: true,
+    },
+  );
 
+  await AuditLog.create({
+    admin: req.user._id,
 
-export const approveBook =
-async(req,res)=>{
+    action: "APPROVE_BOOK",
 
-const book =
-await Book.findByIdAndUpdate(
+    targetId: book._id,
+  });
 
-req.params.id,
-
-{
-status:"approved"
-},
-
-{
-new:true
-}
-
-);
-
-
-
-await AuditLog.create({
-
-admin:req.user._id,
-
-action:"APPROVE_BOOK",
-
-targetId:book._id
-
-});
-
-
-
-res.json(book);
-
+  res.json(book);
 };
 
+export const rejectBook = async (req, res) => {
+  const book = await Book.findByIdAndUpdate(
+    req.params.id,
 
+    {
+      status: "rejected",
+    },
 
+    {
+      new: true,
+    },
+  );
 
+  await AuditLog.create({
+    admin: req.user._id,
 
-export const rejectBook =
-async(req,res)=>{
+    action: "REJECT_BOOK",
 
-const book =
-await Book.findByIdAndUpdate(
+    targetId: book._id,
+  });
 
-req.params.id,
-
-{
-status:"rejected"
-},
-
-{
-new:true
-}
-
-);
-
-
-
-await AuditLog.create({
-
-admin:req.user._id,
-
-action:"REJECT_BOOK",
-
-targetId:book._id
-
-});
-
-
-
-res.json(book);
-
+  res.json(book);
 };
 
+export const payments = async (req, res) => {
+  const result = await Payment.find().sort("-createdAt");
 
-
-
-
-export const payments =
-async(req,res)=>{
-
-const result =
-await Payment.find()
-.sort("-createdAt");
-
-
-
-res.json(result);
-
+  res.json(result);
 };
 
+export const payouts = async (req, res) => {
+  const result = await Payout.find().populate("seller", "name email");
 
-
-
-
-export const payouts =
-async(req,res)=>{
-
-const result =
-await Payout.find()
-.populate(
-"seller",
-"name email"
-);
-
-res.json(result);
-
+  res.json(result);
 };
 
+export const approvePayout = async (req, res) => {
+  const payout = await Payout.findByIdAndUpdate(
+    req.params.id,
 
+    {
+      status: "Approved",
 
+      processedBy: req.user._id,
+    },
 
+    {
+      new: true,
+    },
+  );
 
-export const approvePayout =
-async(req,res)=>{
+  await AuditLog.create({
+    admin: req.user._id,
 
-const payout =
-await Payout.findByIdAndUpdate(
+    action: "APPROVE_PAYOUT",
 
-req.params.id,
+    targetId: payout._id,
+  });
 
-{
-
-status:"Approved",
-
-processedBy:req.user._id
-
-},
-
-{
-new:true
-}
-
-);
-
-
-
-await AuditLog.create({
-
-admin:req.user._id,
-
-action:"APPROVE_PAYOUT",
-
-targetId:payout._id
-
-});
-
-
-
-res.json(payout);
-
+  res.json(payout);
 };

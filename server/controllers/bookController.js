@@ -1,385 +1,164 @@
 import Book from "../models/Book.js";
 
-import {
-uploadImage
-}
-from "../services/cloudinaryService.js";
-
-
+import { uploadImage } from "../services/cloudinaryService.js";
 
 // CREATE BOOK
 
+export const createBook = async (req, res, next) => {
+  try {
+    const images = [];
 
-export const createBook =
-async(req,res,next)=>{
+    if (req.files) {
+      for (const file of req.files) {
+        const url = await uploadImage(file);
 
+        images.push(url);
+      }
+    }
 
-try{
+    const book = await Book.create({
+      ...req.body,
 
+      images,
 
-const images=[];
+      seller: req.user._id,
+    });
 
-
-
-if(req.files){
-
-
-for(
-const file of req.files
-){
-
-const url =
-await uploadImage(file);
-
-
-images.push(url);
-
-
-}
-
-}
-
-
-
-const book =
-await Book.create({
-
-...req.body,
-
-images,
-
-seller:req.user._id
-
-});
-
-
-
-res.status(201).json(book);
-
-
-}
-
-catch(error){
-
-next(error);
-
-}
-
-
+    res.status(201).json(book);
+  } catch (error) {
+    next(error);
+  }
 };
-
-
-
-
 
 // GET ALL BOOKS
 
+export const getBooks = async (req, res) => {
+  const {
+    search,
 
-export const getBooks =
-async(req,res)=>{
+    category,
 
+    condition,
 
-const {
+    minPrice,
 
-search,
+    maxPrice,
 
-category,
+    sort,
+  } = req.query;
 
-condition,
+  let query = {
+    status: "approved",
+  };
 
-minPrice,
+  if (search) {
+    query.$or = [
+      {
+        title: {
+          $regex: search,
+          $options: "i",
+        },
+      },
 
-maxPrice,
+      {
+        author: {
+          $regex: search,
+          $options: "i",
+        },
+      },
 
-sort
+      {
+        ISBN: {
+          $regex: search,
+          $options: "i",
+        },
+      },
+    ];
+  }
 
-}=req.query;
+  if (category) query.category = category;
 
+  if (condition) query.condition = condition;
 
+  if (minPrice || maxPrice)
+    query.price = {
+      $gte: minPrice || 0,
 
-let query={
+      $lte: maxPrice || 999999,
+    };
 
-status:"approved"
+  let books = Book.find(query).populate("seller", "name rating");
 
+  if (sort === "lowest") books.sort("price");
+
+  if (sort === "highest") books.sort("-price");
+
+  if (sort === "newest") books.sort("-createdAt");
+
+  const result = await books;
+
+  res.json(result);
 };
-
-
-
-if(search){
-
-
-query.$or=[
-
-
-{
-title:
-{
-$regex:
-search,
-$options:"i"
-}
-},
-
-
-{
-author:
-{
-$regex:
-search,
-$options:"i"
-}
-},
-
-
-{
-ISBN:
-{
-$regex:
-search,
-$options:"i"
-}
-
-}
-
-
-];
-
-
-}
-
-
-
-
-if(category)
-
-query.category=category;
-
-
-
-if(condition)
-
-query.condition=condition;
-
-
-
-if(minPrice || maxPrice)
-
-
-query.price={
-
-$gte:
-minPrice || 0,
-
-
-$lte:
-maxPrice || 999999
-
-};
-
-
-
-
-let books =
-Book.find(query)
-.populate(
-"seller",
-"name rating"
-);
-
-
-
-if(sort==="lowest")
-
-books.sort(
-"price"
-);
-
-
-if(sort==="highest")
-
-books.sort(
-"-price"
-);
-
-
-if(sort==="newest")
-
-books.sort(
-"-createdAt"
-);
-
-
-
-const result =
-await books;
-
-
-
-res.json(result);
-
-
-};
-
-
-
-
 
 // SINGLE BOOK
 
+export const getBook = async (req, res) => {
+  const book = await Book.findById(req.params.id)
 
-export const getBook =
-async(req,res)=>{
+    .populate("seller", "name rating");
 
+  if (!book)
+    return res.status(404).json({
+      message: "Book not found",
+    });
 
-const book =
-await Book.findById(
-req.params.id
-)
+  book.views++;
 
-.populate(
-"seller",
-"name rating"
-);
+  await book.save();
 
-
-
-if(!book)
-
-return res.status(404)
-.json({
-
-message:"Book not found"
-
-});
-
-
-
-book.views++;
-
-
-await book.save();
-
-
-
-res.json(book);
-
-
+  res.json(book);
 };
-
-
-
-
 
 // SELLER BOOKS
 
+export const sellerBooks = async (req, res) => {
+  const books = await Book.find({
+    seller: req.user._id,
+  });
 
-export const sellerBooks =
-async(req,res)=>{
-
-
-const books =
-await Book.find({
-
-seller:req.user._id
-
-});
-
-
-
-res.json(books);
-
-
+  res.json(books);
 };
-
-
-
-
 
 // UPDATE BOOK
 
+export const updateBook = async (req, res) => {
+  const book = await Book.findById(req.params.id);
 
-export const updateBook =
-async(req,res)=>{
+  if (book.seller.toString() !== req.user._id.toString())
+    return res.status(403).json({
+      message: "Not allowed",
+    });
 
+  Object.assign(book, req.body);
 
-const book =
-await Book.findById(
-req.params.id
-);
+  await book.save();
 
-
-
-if(
-book.seller.toString()
-!==req.user._id.toString()
-)
-
-return res.status(403)
-.json({
-
-message:"Not allowed"
-
-});
-
-
-
-Object.assign(
-book,
-req.body
-);
-
-
-
-await book.save();
-
-
-
-res.json(book);
-
-
+  res.json(book);
 };
-
-
-
-
 
 // DELETE BOOK
 
+export const deleteBook = async (req, res) => {
+  const book = await Book.findById(req.params.id);
 
-export const deleteBook =
-async(req,res)=>{
+  if (book.seller.toString() !== req.user._id.toString())
+    return res.status(403).json({
+      message: "Not allowed",
+    });
 
+  await book.deleteOne();
 
-const book =
-await Book.findById(
-req.params.id
-);
-
-
-
-if(
-book.seller.toString()
-!==req.user._id.toString()
-)
-
-return res.status(403)
-.json({
-
-message:"Not allowed"
-
-});
-
-
-
-await book.deleteOne();
-
-
-
-res.json({
-
-message:"Deleted"
-
-});
-
-
+  res.json({
+    message: "Deleted",
+  });
 };

@@ -1,85 +1,32 @@
-import {
-createContext,
-useContext,
-useEffect,
-useState
-}
-from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 
+const ThemeContext = createContext();
 
-const ThemeContext=
-createContext();
+export function ThemeProvider({ children }) {
+  const [dark, setDark] = useState(localStorage.getItem("theme") === "dark");
 
+  useEffect(() => {
+    if (dark) {
+      document.documentElement.classList.add("dark");
 
+      localStorage.setItem("theme", "dark");
+    } else {
+      document.documentElement.classList.remove("dark");
 
-export function ThemeProvider({
-children
-}){
+      localStorage.setItem("theme", "light");
+    }
+  }, [dark]);
 
-
-const [dark,setDark]=useState(
-
-localStorage.getItem("theme")==="dark"
-
-);
-
-
-
-useEffect(()=>{
-
-
-if(dark){
-
-document.documentElement.classList.add(
-"dark"
-);
-
-localStorage.setItem(
-"theme",
-"dark"
-);
-
-
-}else{
-
-
-document.documentElement.classList.remove(
-"dark"
-);
-
-
-localStorage.setItem(
-"theme",
-"light"
-);
-
-
+  return (
+    <ThemeContext.Provider
+      value={{
+        dark,
+        setDark,
+      }}
+    >
+      {children}
+    </ThemeContext.Provider>
+  );
 }
 
-
-},[dark]);
-
-
-
-return (
-
-<ThemeContext.Provider
-
-value={{
-dark,
-setDark
-}}
-
->
-
-{children}
-
-</ThemeContext.Provider>
-
-);
-
-}
-
-
-export const useTheme=
-()=>useContext(ThemeContext);
+export const useTheme = () => useContext(ThemeContext);

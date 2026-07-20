@@ -1,6 +1,5 @@
-export default function(payment){
-
-return `
+export default function (payment) {
+  return `
 
 <h1>Payment Successful</h1>
 
@@ -12,5 +11,4 @@ ${payment.mpesaReceiptNumber}
 </p>
 
 `;
-
 }

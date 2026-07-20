@@ -1,46 +1,26 @@
 import express from "express";
 
-
 import {
-
-initiatePayment,
-
-mpesaCallback
-
-}
-
-from "../controllers/mpesaController.js";
-
+  initiatePayment,
+  mpesaCallback,
+} from "../controllers/mpesaController.js";
 
 import auth from "../middleware/auth.js";
 
-
-
-const router =
-express.Router();
-
-
+const router = express.Router();
 
 router.post(
+  "/stkpush",
 
-"/stkpush",
+  auth,
 
-auth,
-
-initiatePayment
-
+  initiatePayment,
 );
-
-
 
 router.post(
+  "/callback",
 
-"/callback",
-
-mpesaCallback
-
+  mpesaCallback,
 );
-
-
 
 export default router;

@@ -1,70 +1,25 @@
-import {
-useEffect,
-useState
-}
-from "react";
+import { useEffect, useState } from "react";
 
+import { io } from "socket.io-client";
 
-import {io}
-from "socket.io-client";
+export default function useSocket(userId) {
+  const [socket, setSocket] = useState(null);
 
+  useEffect(() => {
+    if (!userId) return;
 
+    const newSocket = io(
+      import.meta.env.VITE_SOCKET_URL || "http://localhost:5000",
+    );
 
-export default function useSocket(userId){
+    newSocket.emit("join", userId);
 
+    setSocket(newSocket);
 
-const [
-socket,
-setSocket
-]=useState(null);
+    return () => {
+      newSocket.disconnect();
+    };
+  }, [userId]);
 
-
-
-useEffect(()=>{
-
-
-if(!userId)
-
-return;
-
-
-
-const newSocket =
-io(
-
-import.meta.env.VITE_SOCKET_URL ||
-
-"http://localhost:5000"
-
-);
-
-
-
-newSocket.emit(
-"join",
-userId
-);
-
-
-
-setSocket(
-newSocket
-);
-
-
-
-return()=>{
-
-newSocket.disconnect();
-
-};
-
-
-},[userId]);
-
-
-
-return socket;
-
-
+  return socket;
 }

@@ -1,122 +1,75 @@
 import mongoose from "mongoose";
 
+const userSchema = new mongoose.Schema(
+  {
+    name: {
+      type: String,
 
-const userSchema =
-new mongoose.Schema(
+      required: true,
 
-{
+      trim: true,
+    },
 
+    email: {
+      type: String,
 
-name:{
+      required: true,
 
-type:String,
+      unique: true,
 
-required:true,
+      lowercase: true,
+    },
 
-trim:true
+    phone: {
+      type: String,
 
-},
+      required: true,
+    },
 
+    password: {
+      type: String,
 
-email:{
+      required: true,
 
-type:String,
+      minlength: 6,
+    },
 
-required:true,
+    role: {
+      type: String,
 
-unique:true,
+      enum: ["buyer", "seller", "admin"],
 
-lowercase:true
+      default: "buyer",
+    },
 
-},
+    avatar: {
+      type: String,
 
+      default: "",
+    },
 
-phone:{
+    isActive: {
+      type: Boolean,
 
-type:String,
+      default: true,
+    },
 
-required:true
+    rating: {
+      average: {
+        type: Number,
+        default: 0,
+      },
 
-},
+      count: {
+        type: Number,
+        default: 0,
+      },
+    },
+  },
 
-
-password:{
-
-type:String,
-
-required:true,
-
-minlength:6
-
-},
-
-
-
-role:{
-
-type:String,
-
-enum:[
-
-"buyer",
-"seller",
-"admin"
-
-],
-
-default:"buyer"
-
-},
-
-
-avatar:{
-
-type:String,
-
-default:""
-
-},
-
-
-isActive:{
-
-type:Boolean,
-
-default:true
-
-},
-
-
-rating:{
-
-average:{
-type:Number,
-default:0
-},
-
-count:{
-type:Number,
-default:0
-}
-
-}
-
-
-},
-
-
-{
-
-timestamps:true
-
-}
-
-
+  {
+    timestamps: true,
+  },
 );
 
-
-
-export default mongoose.model(
-"User",
-userSchema
-);
+export default mongoose.model("User", userSchema);
