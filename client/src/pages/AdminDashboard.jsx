@@ -1,71 +1,186 @@
-import { useEffect, useState } from "react";
-
-import { getDashboard } from "../api/adminApi";
+import { Link, useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 
 export default function AdminDashboard() {
-  const [stats, setStats] = useState(null);
+  const navigate = useNavigate();
 
-  useEffect(() => {
-    load();
-  }, []);
+  const logout = () => {
+    localStorage.removeItem("token");
 
-  const load = async () => {
-    const res = await getDashboard();
+    localStorage.removeItem("user");
 
-    setStats(res.data);
+    toast.success("Logged out successfully");
+
+    navigate("/login");
   };
-
-  if (!stats) return <div>Loading...</div>;
 
   return (
     <div
       className="
-container
-mx-auto
-py-10
-"
+      container
+      mx-auto
+      py-10
+      px-5
+      "
     >
-      <h1
+      <div
         className="
-text-4xl
-font-bold
-mb-8
-"
+        bg-slate-900
+        text-white
+        rounded-xl
+        p-8
+        mb-8
+        "
       >
-        Admin Dashboard
-      </h1>
+        <h1
+          className="
+          text-3xl
+          font-bold
+          "
+        >
+          Admin Dashboard
+        </h1>
+
+        <p
+          className="
+          mt-3
+          text-gray-300
+          "
+        >
+          Manage BookHub users, sellers, books and orders.
+        </p>
+      </div>
 
       <div
         className="
-grid
-md:grid-cols-5
-gap-5
-"
+        grid
+        md:grid-cols-2
+        lg:grid-cols-4
+        gap-6
+        "
       >
-        <div className="border p-5 rounded">
-          Users
-          <h2>{stats.totalUsers}</h2>
-        </div>
+        <Link
+          to="/admin/users"
+          className="
+          bg-blue-600
+          text-white
+          rounded-xl
+          p-6
+          hover:bg-blue-700
+          "
+        >
+          <h2
+            className="
+            text-xl
+            font-bold
+            "
+          >
+            Users
+          </h2>
 
-        <div className="border p-5 rounded">
-          Books
-          <h2>{stats.totalBooks}</h2>
-        </div>
+          <p className="mt-2">Manage customers</p>
+        </Link>
 
-        <div className="border p-5 rounded">
-          Orders
-          <h2>{stats.totalOrders}</h2>
-        </div>
+        <Link
+          to="/admin/sellers"
+          className="
+          bg-green-600
+          text-white
+          rounded-xl
+          p-6
+          hover:bg-green-700
+          "
+        >
+          <h2
+            className="
+            text-xl
+            font-bold
+            "
+          >
+            Sellers
+          </h2>
 
-        <div className="border p-5 rounded">
-          Payments
-          <h2>{stats.totalPayments}</h2>
-        </div>
+          <p className="mt-2">Approve and manage sellers</p>
+        </Link>
 
-        <div className="border p-5 rounded">
-          Revenueseller
-          <h2>KES {stats.revenue}</h2>
-        </div>
+        <Link
+          to="/admin/orders"
+          className="
+          bg-purple-600
+          text-white
+          rounded-xl
+          p-6
+          hover:bg-purple-700
+          "
+        >
+          <h2
+            className="
+            text-xl
+            font-bold
+            "
+          >
+            Orders
+          </h2>
+
+          <p className="mt-2">Monitor payments and escrow</p>
+        </Link>
+
+        <Link
+          to="/admin/books"
+          className="
+          bg-orange-600
+          text-white
+          rounded-xl
+          p-6
+          hover:bg-orange-700
+          "
+        >
+          <h2
+            className="
+            text-xl
+            font-bold
+            "
+          >
+            Books
+          </h2>
+
+          <p className="mt-2">Manage listings</p>
+        </Link>
+      </div>
+
+      <div
+        className="
+        mt-10
+        flex
+        gap-4
+        flex-wrap
+        "
+      >
+        <Link
+          to="/admin/announcements"
+          className="
+          bg-indigo-600
+          text-white
+          px-5
+          py-3
+          rounded-lg
+          "
+        >
+          Announcements
+        </Link>
+
+        <button
+          onClick={logout}
+          className="
+          bg-red-600
+          text-white
+          px-5
+          py-3
+          rounded-lg
+          "
+        >
+          Logout
+        </button>
       </div>
     </div>
   );
