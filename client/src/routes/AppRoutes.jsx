@@ -6,6 +6,7 @@ import Register from "../pages/Register";
 import BookDetails from "../pages/BookDetails";
 import SellerDashboard from "../pages/SellerDashboard";
 import AdminDashboard from "../pages/AdminDashboard";
+import Books from "../pages/Books";
 
 export default function AppRoutes() {
   return (
@@ -21,6 +22,7 @@ export default function AppRoutes() {
       <Route path="/seller" element={<SellerDashboard />} />
 
       <Route path="/admin" element={<AdminDashboard />} />
+      <Route path="/books" element={<Books />} />
     </Routes>
   );
 }
