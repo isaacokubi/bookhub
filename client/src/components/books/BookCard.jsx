@@ -1,62 +1,54 @@
-import { Link } from "react-router-dom";
-import { useCart } from "../../context/CartContext";
+import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 
+import { useCart } from "../../context/CartContext";
 
 export default function BookCard({ book }) {
-
   const { cart, addToCart } = useCart();
 
+  const navigate = useNavigate();
 
+  const isInCart = cart.some((item) => item._id === book._id);
 
   const handleAddToCart = () => {
-
-    const alreadyInCart = cart.some(
-      (item) => item._id === book._id
-    );
-
-
-    if (alreadyInCart) {
-
-      toast.info(
-        "Book is already in your cart 🛒"
-      );
+    if (isInCart) {
+      toast.info(`${book.title} is already in your cart 🛒`);
 
       return;
-
     }
-
 
     addToCart(book);
 
-
-    toast.success(
-      `${book.title} added to cart 🛒`
-    );
-
+    toast.success(`${book.title} added to cart 🛒`);
   };
 
+  const handleBuyNow = () => {
+    if (!isInCart) {
+      addToCart(book);
+    }
 
+    toast.success("Book added. Proceeding to checkout 💳");
+
+    navigate("/checkout");
+  };
 
   return (
-
     <div
       className="
       bg-white
       dark:bg-slate-900
       rounded-xl
-      shadow
+      shadow-md
       overflow-hidden
-      hover:shadow-lg
+      hover:shadow-xl
       transition
       "
     >
-
-
       <img
         src={
-          book.images?.[0] ||
-          "https://via.placeholder.com/400"
+          book.images?.length
+            ? book.images[0]
+            : "https://via.placeholder.com/400x500?text=No+Image"
         }
         alt={book.title}
         className="
@@ -66,22 +58,16 @@ export default function BookCard({ book }) {
         "
       />
 
-
-
       <div className="p-5">
-
-
-        <h3
+        <h2
           className="
+          text-xl
           font-bold
-          text-lg
           dark:text-white
           "
         >
           {book.title}
-        </h3>
-
-
+        </h2>
 
         <p
           className="
@@ -89,11 +75,8 @@ export default function BookCard({ book }) {
           dark:text-gray-400
           "
         >
-          {book.author}
+          By {book.author}
         </p>
-
-
-
 
         <p
           className="
@@ -105,25 +88,19 @@ export default function BookCard({ book }) {
           KES {book.price}
         </p>
 
-
-
-
         <div
           className="
           flex
+          flex-wrap
           gap-3
           mt-5
           "
         >
-
-
           <Link
-
             to={`/books/${book._id}`}
-
             className="
             border
-            px-3
+            px-4
             py-2
             rounded
             hover:bg-gray-100
@@ -131,45 +108,47 @@ export default function BookCard({ book }) {
             dark:hover:bg-slate-800
             "
           >
-
             View
-
           </Link>
 
+          <button
+            onClick={handleAddToCart}
+            disabled={isInCart}
+            className={`
+              px-4
+              py-2
+              rounded
+              text-white
+              transition
 
+              ${
+                isInCart
+                  ? "bg-gray-400 cursor-not-allowed"
+                  : "bg-blue-600 hover:bg-blue-700 active:scale-95"
+              }
 
+            `}
+          >
+            {isInCart ? "Added ✓" : "Add To Cart 🛒"}
+          </button>
 
           <button
-
-            onClick={handleAddToCart}
-
+            onClick={handleBuyNow}
             className="
-            bg-blue-600
+            bg-green-600
             text-white
-            px-3
+            px-4
             py-2
             rounded
-            hover:bg-blue-700
+            hover:bg-green-700
             active:scale-95
             transition
             "
-
           >
-
-            Add to Cart 🛒
-
+            Buy Now ⚡
           </button>
-
-
-
         </div>
-
-
       </div>
-
-
     </div>
-
   );
-
 }

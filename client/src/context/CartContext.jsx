@@ -6,11 +6,19 @@ export function CartProvider({ children }) {
   const [cart, setCart] = useState([]);
 
   const addToCart = (book) => {
-    setCart([...cart, book]);
+    setCart((prev) => {
+      const alreadyExists = prev.some((item) => item._id === book._id);
+
+      if (alreadyExists) {
+        return prev;
+      }
+
+      return [...prev, book];
+    });
   };
 
   const removeFromCart = (id) => {
-    setCart(cart.filter((item) => item._id !== id));
+    setCart((prev) => prev.filter((item) => item._id !== id));
   };
 
   return (

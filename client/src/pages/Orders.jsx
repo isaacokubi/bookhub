@@ -55,10 +55,8 @@ export default function Orders() {
               <div className="mt-4">
                 <h3 className="font-semibold">Books</h3>
 
-                {order.books.map((book) => (
-                  <div key={book._id} className="mt-2">
-                    {book.title}
-                  </div>
+                {order.books.map((book, index) => (
+                  <div key={`${book._id}-${index}`}>{book.title}</div>
                 ))}
               </div>
             </div>
