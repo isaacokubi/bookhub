@@ -1,18 +1,9 @@
 import axios from "axios";
 
-const API =
-  "https://bookhub-1-d9b3.onrender.com/api/orders";
-
-const authConfig = () => ({
-  headers: {
-    Authorization: `Bearer ${localStorage.getItem(
-      "token"
-    )}`,
-  },
+const API = axios.create({
+  baseURL: "https://bookhub-1-d9b3.onrender.com/api",
 });
 
-export const getOrders = () =>
-  axios.get(API, authConfig());
-
-export const createOrder = (data) =>
-  axios.post(API, data, authConfig());
+export const createOrder = (data) => {
+  return API.post("/orders", data);
+};

@@ -1,14 +1,17 @@
 import Order from "../models/Order.js";
 
+// CREATE ORDER
+
 export const createOrder = async (req, res) => {
   try {
     const { books, total } = req.body;
 
     const order = await Order.create({
       user: req.user.id,
+
       books,
+
       total,
-      status: "Paid",
     });
 
     res.status(201).json(order);
@@ -19,13 +22,17 @@ export const createOrder = async (req, res) => {
   }
 };
 
-export const getMyOrders = async (req, res) => {
+// GET USER ORDERS
+
+export const getOrders = async (req, res) => {
   try {
     const orders = await Order.find({
       user: req.user.id,
     })
       .populate("books")
-      .sort({ createdAt: -1 });
+      .sort({
+        createdAt: -1,
+      });
 
     res.json(orders);
   } catch (error) {

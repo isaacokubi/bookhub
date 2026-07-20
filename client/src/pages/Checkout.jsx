@@ -2,7 +2,9 @@ import { useState } from "react";
 import { toast } from "react-toastify";
 
 import { useCart } from "../context/CartContext";
+
 import { initiateMpesa } from "../api/paymentApi";
+import { createOrder } from "../api/orderApi";
 
 export default function Checkout() {
   const { cart } = useCart();
@@ -11,7 +13,11 @@ export default function Checkout() {
 
   const [loading, setLoading] = useState(false);
 
-  const amount = cart.reduce((sum, item) => sum + item.price, 0);
+  const amount = cart.reduce(
+    (sum, item) => sum + Number(item.price),
+
+    0,
+  );
 
   const pay = async () => {
     if (!phone) {
@@ -29,19 +35,31 @@ export default function Checkout() {
     try {
       setLoading(true);
 
-      const books = cart.map((item) => item._id);
+      // 1. Create order first
+      const orderResponse = await createOrder({
+        books: cart.map((item) => item._id),
 
+        total: amount,
+      });
+
+      const orderId = orderResponse.data._id;
+
+      // 2. Initiate M-Pesa payment
       await initiateMpesa({
         phone,
 
         amount,
 
-        books,
+        orderId,
       });
 
       toast.success("M-Pesa prompt sent. Enter your PIN.");
     } catch (error) {
-      console.log("Payment error:", error.response?.data || error.message);
+      console.log(
+        "Payment error:",
+
+        error.response?.data || error.message,
+      );
 
       toast.error("Payment initiation failed");
     } finally {
@@ -89,7 +107,8 @@ export default function Checkout() {
 
         <div className="space-y-2">
           <p>
-            Number of Books: <b>{cart.length}</b>
+            Number of Books:
+            <b> {cart.length}</b>
           </p>
 
           <p
@@ -99,7 +118,7 @@ export default function Checkout() {
             text-green-600
             "
           >
-            Total: KES {amount}
+            Total: KES {amount.toLocaleString()}
           </p>
         </div>
 

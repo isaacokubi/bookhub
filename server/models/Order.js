@@ -12,6 +12,7 @@ const orderSchema = new mongoose.Schema(
       {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Book",
+        required: true,
       },
     ],
 
@@ -20,9 +21,20 @@ const orderSchema = new mongoose.Schema(
       required: true,
     },
 
+    paymentStatus: {
+      type: String,
+      enum: ["Pending", "Paid", "Failed"],
+      default: "Pending",
+    },
+
     status: {
       type: String,
-      default: "Paid",
+      enum: ["Processing", "Completed", "Cancelled"],
+      default: "Processing",
+    },
+
+    transactionId: {
+      type: String,
     },
   },
   {
