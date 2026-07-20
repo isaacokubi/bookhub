@@ -1,6 +1,6 @@
 import User from "../models/User.js";
 import bcrypt from "bcryptjs";
-import generateToken from "../utils/generateToken.js";
+import jwt from "jsonwebtoken";
 
 // =======================
 // Register User
@@ -33,7 +33,19 @@ export const register = async (req, res, next) => {
       role: "user",
     });
 
-    const token = generateToken(user._id);
+    const token = jwt.sign(
+      {
+        id: user._id,
+
+        role: user.role,
+      },
+
+      process.env.JWT_SECRET,
+
+      {
+        expiresIn: "1d",
+      },
+    );
 
     res.status(201).json({
       message: "Registration successful",
@@ -47,6 +59,8 @@ export const register = async (req, res, next) => {
 
         email: user.email,
 
+        phone: user.phone,
+
         role: user.role,
       },
     });
@@ -58,9 +72,9 @@ export const register = async (req, res, next) => {
 // =======================
 // Register Seller
 // =======================
-export const registerSeller = async (req, res, next) => {
+export const registerSeller = async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, phone, password } = req.body;
 
     const existingUser = await User.findOne({
       email,
@@ -79,30 +93,50 @@ export const registerSeller = async (req, res, next) => {
 
       email,
 
+      phone,
+
       password: hashedPassword,
 
       role: "seller",
     });
 
-    const token = generateToken(seller._id);
+    const token = jwt.sign(
+      {
+        id: seller._id,
+
+        role: seller.role,
+      },
+
+      process.env.JWT_SECRET,
+
+      {
+        expiresIn: "1d",
+      },
+    );
 
     res.status(201).json({
-      message: "Seller account created",
+      message: "Seller registered successfully",
 
       token,
 
-      seller: {
+      user: {
         id: seller._id,
 
         name: seller.name,
 
         email: seller.email,
 
+        phone: seller.phone,
+
         role: seller.role,
       },
     });
   } catch (error) {
-    next(error);
+    console.log("Seller register error:", error);
+
+    res.status(500).json({
+      message: error.message,
+    });
   }
 };
 
@@ -135,7 +169,19 @@ export const login = async (req, res, next) => {
       });
     }
 
-    const token = generateToken(user._id);
+    const token = jwt.sign(
+      {
+        id: user._id,
+
+        role: user.role,
+      },
+
+      process.env.JWT_SECRET,
+
+      {
+        expiresIn: "1d",
+      },
+    );
 
     res.json({
       token,
@@ -146,6 +192,8 @@ export const login = async (req, res, next) => {
         name: user.name,
 
         email: user.email,
+
+        phone: user.phone,
 
         role: user.role,
       },
