@@ -24,7 +24,7 @@ getFavorites
 
 
 router.post(
-"/bookId",
+"/",
 protect,
 addFavorite
 );
