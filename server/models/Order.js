@@ -2,77 +2,29 @@ import mongoose from "mongoose";
 
 const orderSchema = new mongoose.Schema(
   {
-    buyer: {
+    user: {
       type: mongoose.Schema.Types.ObjectId,
-
       ref: "User",
-
       required: true,
     },
 
-    seller: {
-      type: mongoose.Schema.Types.ObjectId,
-
-      ref: "User",
-    },
-
-    items: [
+    books: [
       {
-        book: {
-          type: mongoose.Schema.Types.ObjectId,
-
-          ref: "Book",
-        },
-
-        title: String,
-
-        quantity: Number,
-
-        price: Number,
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Book",
       },
     ],
 
-    amount: {
+    total: {
       type: Number,
-
       required: true,
     },
 
-    sellerAmount: Number,
-
-    platformFee: Number,
-
     status: {
       type: String,
-
-      enum: [
-        "Pending",
-
-        "Paid",
-
-        "Processing",
-
-        "Shipped",
-
-        "Delivered",
-
-        "Cancelled",
-
-        "Refunded",
-      ],
-
-      default: "Pending",
-    },
-
-    paymentStatus: {
-      type: String,
-
-      enum: ["Pending", "Paid", "Failed"],
-
-      default: "Pending",
+      default: "Paid",
     },
   },
-
   {
     timestamps: true,
   },

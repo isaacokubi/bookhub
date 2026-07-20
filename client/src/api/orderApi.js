@@ -1,25 +1,18 @@
-import api from "./axios";
+import axios from "axios";
 
+const API =
+  "https://bookhub-1-d9b3.onrender.com/api/orders";
 
-export const createOrder =
-(data)=>
-api.post(
-"/orders",
-data
-);
+const authConfig = () => ({
+  headers: {
+    Authorization: `Bearer ${localStorage.getItem(
+      "token"
+    )}`,
+  },
+});
 
+export const getOrders = () =>
+  axios.get(API, authConfig());
 
-
-export const getMyOrders =
-()=>
-api.get(
-"/orders/my"
-);
-
-
-
-export const getSellerOrders =
-()=>
-api.get(
-"/orders/seller"
-);
+export const createOrder = (data) =>
+  axios.post(API, data, authConfig());

@@ -1,7 +1,7 @@
 import { useState } from "react";
+import { toast } from "react-toastify";
 
 import { useCart } from "../context/CartContext";
-
 import { initiateMpesa } from "../api/paymentApi";
 
 export default function Checkout() {
@@ -9,77 +9,129 @@ export default function Checkout() {
 
   const [phone, setPhone] = useState("");
 
+  const [loading, setLoading] = useState(false);
+
   const amount = cart.reduce((sum, item) => sum + item.price, 0);
 
   const pay = async () => {
+    if (!phone) {
+      toast.error("Enter your M-Pesa phone number");
+
+      return;
+    }
+
+    if (cart.length === 0) {
+      toast.error("Your cart is empty");
+
+      return;
+    }
+
     try {
+      setLoading(true);
+
+      const books = cart.map((item) => item._id);
+
       await initiateMpesa({
         phone,
+
         amount,
+
+        books,
       });
 
-      alert("STK Push sent to your phone");
-    } catch {
-      alert("Payment failed");
+      toast.success("M-Pesa prompt sent. Enter your PIN.");
+    } catch (error) {
+      console.log("Payment error:", error.response?.data || error.message);
+
+      toast.error("Payment initiation failed");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <div
       className="
-container
-mx-auto
-max-w-xl
-py-10
-"
+      container
+      mx-auto
+      max-w-xl
+      px-5
+      py-10
+      "
     >
       <h1
         className="
-text-3xl
-font-bold
-mb-5
-"
+        text-3xl
+        font-bold
+        mb-6
+        "
       >
         Checkout
       </h1>
 
       <div
         className="
-border
-p-5
-rounded
-"
+        border
+        rounded-lg
+        shadow
+        p-6
+        "
       >
-        <p>
-          Amount:
-          <b>KES {amount}</b>
-        </p>
+        <h2
+          className="
+          text-xl
+          font-bold
+          mb-4
+          "
+        >
+          Order Summary
+        </h2>
+
+        <div className="space-y-2">
+          <p>
+            Number of Books: <b>{cart.length}</b>
+          </p>
+
+          <p
+            className="
+            text-xl
+            font-bold
+            text-green-600
+            "
+          >
+            Total: KES {amount}
+          </p>
+        </div>
 
         <input
+          type="text"
           placeholder="2547XXXXXXXX"
-          className="
-border
-p-3
-w-full
-mt-5
-rounded
-"
           value={phone}
           onChange={(e) => setPhone(e.target.value)}
+          className="
+          border
+          p-3
+          rounded
+          w-full
+          mt-5
+          "
         />
 
         <button
           onClick={pay}
+          disabled={loading}
           className="
-bg-green-600
-text-white
-w-full
-mt-5
-p-3
-rounded
-"
+          bg-green-600
+          text-white
+          w-full
+          mt-5
+          py-3
+          rounded-lg
+          hover:bg-green-700
+          disabled:opacity-50
+          "
         >
-          Pay With M-Pesa
+          {loading ? "Sending STK Push..." : "Pay With M-Pesa"}
         </button>
       </div>
     </div>

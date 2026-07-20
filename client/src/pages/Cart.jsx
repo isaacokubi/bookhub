@@ -6,7 +6,6 @@ import { useCart } from "../context/CartContext";
 export default function Cart() {
   const { cart, removeFromCart } = useCart();
 
-
   const handleRemoveFromCart = (id) => {
     removeFromCart(id);
 
@@ -16,41 +15,15 @@ export default function Cart() {
     });
   };
 
-
-  const total = cart.reduce(
-    (sum, item) => sum + item.price,
-    0
-  );
-
+  const total = cart.reduce((sum, item) => sum + item.price, 0);
 
   return (
-    <div
-      className="
-      container
-      mx-auto
-      px-5
-      py-10
-      "
-    >
-
-      <h1
-        className="
-        text-3xl
-        font-bold
-        "
-      >
-        Shopping Cart
-      </h1>
-
+    <div className="container mx-auto px-5 py-10">
+      <h1 className="text-3xl font-bold">Shopping Cart</h1>
 
       {cart.length === 0 ? (
-
         <div className="mt-8">
-
-          <p className="text-gray-500">
-            Your cart is empty.
-          </p>
-
+          <p className="text-gray-500">Your cart is empty.</p>
 
           <Link
             to="/books"
@@ -66,18 +39,11 @@ export default function Cart() {
           >
             Browse Books
           </Link>
-
         </div>
-
-
       ) : (
-
         <>
-
           <div className="mt-8">
-
             {cart.map((item) => (
-
               <div
                 key={item._id}
                 className="
@@ -91,33 +57,13 @@ export default function Cart() {
                 shadow-sm
                 "
               >
-
                 <div>
+                  <h2 className="font-bold">{item.title}</h2>
 
-                  <h2
-                    className="
-                    font-bold
-                    "
-                  >
-                    {item.title}
-                  </h2>
-
-
-                  <p>
-                    {item.author}
-                  </p>
-
+                  <p>{item.author}</p>
                 </div>
 
-
-                <div
-                  className="
-                  flex
-                  items-center
-                  gap-5
-                  "
-                >
-
+                <div className="flex items-center gap-5">
                   <span
                     className="
                     font-bold
@@ -127,11 +73,8 @@ export default function Cart() {
                     KES {item.price}
                   </span>
 
-
                   <button
-                    onClick={() =>
-                      handleRemoveFromCart(item._id)
-                    }
+                    onClick={() => handleRemoveFromCart(item._id)}
                     className="
                     bg-red-600
                     text-white
@@ -139,46 +82,44 @@ export default function Cart() {
                     py-2
                     rounded
                     hover:bg-red-700
-                    transition
                     "
                   >
                     Remove
                   </button>
-
                 </div>
-
               </div>
-
             ))}
-
           </div>
-
-
 
           <div
             className="
             mt-8
             border-t
-            pt-5
+            pt-6
             "
           >
+            <div className="mb-4">
+              <h2 className="text-xl font-bold">Order Summary</h2>
 
-            <h2
-              className="
-              font-bold
-              text-xl
-              "
-            >
-              Total: KES {total}
-            </h2>
+              <p>Books: {cart.length}</p>
 
-
+              <p
+                className="
+                text-2xl
+                font-bold
+                text-green-600
+                mt-2
+                "
+              >
+                Total: KES {total}
+              </p>
+            </div>
 
             <Link
               to="/checkout"
               className="
               inline-block
-              mt-5
+              mt-3
               bg-green-600
               text-white
               px-6
@@ -190,14 +131,9 @@ export default function Cart() {
             >
               Proceed to Pay with M-Pesa
             </Link>
-
-
           </div>
-
         </>
-
       )}
-
     </div>
   );
 }

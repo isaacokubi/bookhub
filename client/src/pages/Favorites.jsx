@@ -1,7 +1,7 @@
 import { useFavorite } from "../context/FavoriteContext";
 
 export default function Favorites() {
-  const { favorites } = useFavorite();
+  const { favorites, removeFavorite } = useFavorite();
 
   return (
     <div
@@ -15,6 +15,7 @@ export default function Favorites() {
         className="
         text-3xl
         font-bold
+        mb-6
         "
       >
         Favorite Books
@@ -31,19 +32,40 @@ export default function Favorites() {
             p-4
             my-3
             rounded
+            flex
+            justify-between
+            items-center
             "
           >
-            <h2
+            <div>
+              <h2
+                className="
+                font-bold
+                text-lg
+                "
+              >
+                {book.title}
+              </h2>
+
+              <p>{book.author}</p>
+
+              <p>KES {book.price}</p>
+            </div>
+
+            <button
+              onClick={() => removeFavorite(book._id)}
               className="
-              font-bold
+              bg-red-500
+              text-white
+              px-4
+              py-2
+              rounded
+              hover:bg-red-600
+              transition
               "
             >
-              {book.title}
-            </h2>
-
-            <p>{book.author}</p>
-
-            <p>KES {book.price}</p>
+              Remove
+            </button>
           </div>
         ))
       )}

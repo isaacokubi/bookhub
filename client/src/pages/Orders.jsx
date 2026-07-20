@@ -1,57 +1,70 @@
 import { useEffect, useState } from "react";
-
-import { getMyOrders } from "../api/orderApi";
+import { getOrders } from "../api/orderApi";
 
 export default function Orders() {
   const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getMyOrders()
-      .then((res) => setOrders(res.data))
-
-      .catch(() => {});
+    loadOrders();
   }, []);
 
+  const loadOrders = async () => {
+    try {
+      const res = await getOrders();
+      setOrders(res.data);
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return <div className="container mx-auto py-10">Loading orders...</div>;
+  }
+
   return (
-    <div
-      className="
-container
-mx-auto
-py-10
-"
-    >
-      <h1
-        className="
-text-3xl
-font-bold
-"
-      >
-        My Orders
-      </h1>
+    <div className="container mx-auto py-10 px-5">
+      <h1 className="text-3xl font-bold mb-6">My Orders</h1>
 
-      {orders.map((order) => (
-        <div
-          key={order._id}
-          className="
-border
-p-5
-mt-5
-rounded
-"
-        >
-          <p>
-            Order ID:
-            {order._id}
-          </p>
+      {orders.length === 0 ? (
+        <p>No orders yet.</p>
+      ) : (
+        <div className="space-y-6">
+          {orders.map((order) => (
+            <div
+              key={order._id}
+              className="
+              border
+              rounded
+              p-5
+              shadow
+              "
+            >
+              <h2 className="font-bold text-lg">
+                Order #{order._id.slice(-6)}
+              </h2>
 
-          <p>
-            Status:
-            {order.status}
-          </p>
+              <p>Total: KES {order.total}</p>
 
-          <p>Amount: KES {order.amount}</p>
+              <p>Status: {order.status}</p>
+
+              <p>Date: {new Date(order.createdAt).toLocaleDateString()}</p>
+
+              <div className="mt-4">
+                <h3 className="font-semibold">Books</h3>
+
+                {order.books.map((book) => (
+                  <div key={book._id} className="mt-2">
+                    {book.title}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
         </div>
-      ))}
+      )}
     </div>
   );
 }
