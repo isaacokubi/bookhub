@@ -44,21 +44,39 @@ export default function BookCard({ book }) {
       transition
       "
     >
+      {/* Book Image */}
       <img
         src={
-          book.images?.length
-            ? book.images[0]
-            : "https://via.placeholder.com/400x500?text=No+Image"
+          book.images?.[0] ||
+          "https://via.placeholder.com/400x500?text=No+Image"
         }
         alt={book.title}
         className="
-        h-56
         w-full
+        h-48
         object-cover
+        rounded
         "
       />
 
       <div className="p-5">
+        {/* Condition */}
+        <span
+          className="
+          inline-block
+          bg-blue-100
+          text-blue-700
+          text-xs
+          px-3
+          py-1
+          rounded-full
+          mb-3
+          "
+        >
+          {book.condition}
+        </span>
+
+        {/* Title */}
         <h2
           className="
           text-xl
@@ -69,6 +87,7 @@ export default function BookCard({ book }) {
           {book.title}
         </h2>
 
+        {/* Author */}
         <p
           className="
           text-gray-500
@@ -78,16 +97,32 @@ export default function BookCard({ book }) {
           By {book.author}
         </p>
 
+        {/* Seller */}
+        {book.seller && (
+          <p
+            className="
+            text-sm
+            text-gray-400
+            mt-1
+            "
+          >
+            Seller: {book.seller.name}
+          </p>
+        )}
+
+        {/* Price */}
         <p
           className="
           text-blue-600
           font-bold
+          text-lg
           mt-3
           "
         >
           KES {book.price}
         </p>
 
+        {/* Buttons */}
         <div
           className="
           flex
@@ -96,6 +131,7 @@ export default function BookCard({ book }) {
           mt-5
           "
         >
+          {/* View */}
           <Link
             to={`/books/${book._id}`}
             className="
@@ -104,6 +140,7 @@ export default function BookCard({ book }) {
             py-2
             rounded
             hover:bg-gray-100
+            dark:text-white
             dark:border-slate-700
             dark:hover:bg-slate-800
             "
@@ -111,27 +148,29 @@ export default function BookCard({ book }) {
             View
           </Link>
 
+          {/* Add To Cart */}
           <button
             onClick={handleAddToCart}
             disabled={isInCart}
             className={`
-              px-4
-              py-2
-              rounded
-              text-white
-              transition
+            px-4
+            py-2
+            rounded
+            text-white
+            transition
 
-              ${
-                isInCart
-                  ? "bg-gray-400 cursor-not-allowed"
-                  : "bg-blue-600 hover:bg-blue-700 active:scale-95"
-              }
+            ${
+              isInCart
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-blue-600 hover:bg-blue-700 active:scale-95"
+            }
 
             `}
           >
             {isInCart ? "Added ✓" : "Add To Cart 🛒"}
           </button>
 
+          {/* Buy Now */}
           <button
             onClick={handleBuyNow}
             className="

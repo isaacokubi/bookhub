@@ -19,7 +19,7 @@ import adminRoutes from "./routes/adminRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
 import walletRoutes from "./routes/walletRoutes.js";
 import withdrawalRoutes from "./routes/withdrawalRoutes.js";
-
+import sellerRoutes from "./routes/sellerRoutes.js";
 
 import sanitize from "./middleware/sanitize.js";
 import { securityMiddleware } from "./middleware/security.js";
@@ -39,20 +39,10 @@ securityMiddleware(app);
 
 app.use(
   cors({
-    origin: [
-      "http://localhost:5173",
-      "https://bookhub-swart.vercel.app/"
-    ],
+    origin: ["http://localhost:5173", "https://bookhub-swart.vercel.app/"],
     credentials: true,
-    methods: [
-      "GET",
-      "POST",
-      "PUT",
-      "PATCH",
-      "DELETE",
-      "OPTIONS"
-    ]
-  })
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  }),
 );
 app.use(express.json());
 app.use(sanitize);
@@ -76,7 +66,7 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/wallet", walletRoutes);
 app.use("/api/withdrawals", withdrawalRoutes);
-
+app.use("/api/seller", sellerRoutes);
 
 app.use(errorHandler);
 

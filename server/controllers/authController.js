@@ -1,9 +1,10 @@
 import User from "../models/User.js";
-
 import bcrypt from "bcryptjs";
-
 import generateToken from "../utils/generateToken.js";
 
+// =======================
+// Register User
+// =======================
 export const register = async (req, res, next) => {
   try {
     const { name, email, phone, password } = req.body;
@@ -12,10 +13,11 @@ export const register = async (req, res, next) => {
       email,
     });
 
-    if (exists)
+    if (exists) {
       return res.status(400).json({
         message: "Email already registered",
       });
+    }
 
     const hashedPassword = await bcrypt.hash(password, 12);
 
@@ -27,6 +29,8 @@ export const register = async (req, res, next) => {
       phone,
 
       password: hashedPassword,
+
+      role: "user",
     });
 
     const token = generateToken(user._id);
@@ -38,8 +42,11 @@ export const register = async (req, res, next) => {
 
       user: {
         id: user._id,
+
         name: user.name,
+
         email: user.email,
+
         role: user.role,
       },
     });
@@ -48,22 +55,73 @@ export const register = async (req, res, next) => {
   }
 };
 
-export const login = async (req, res, next) => {
+// =======================
+// Register Seller
+// =======================
+export const registerSeller = async (req, res, next) => {
   try {
-    const {
+    const { name, email, password } = req.body;
+
+    const existingUser = await User.findOne({
+      email,
+    });
+
+    if (existingUser) {
+      return res.status(400).json({
+        message: "Email already exists",
+      });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const seller = await User.create({
+      name,
+
       email,
 
-      password,
-    } = req.body;
+      password: hashedPassword,
+
+      role: "seller",
+    });
+
+    const token = generateToken(seller._id);
+
+    res.status(201).json({
+      message: "Seller account created",
+
+      token,
+
+      seller: {
+        id: seller._id,
+
+        name: seller.name,
+
+        email: seller.email,
+
+        role: seller.role,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// =======================
+// Login User / Seller
+// =======================
+export const login = async (req, res, next) => {
+  try {
+    const { email, password } = req.body;
 
     const user = await User.findOne({
       email,
     });
 
-    if (!user)
+    if (!user) {
       return res.status(401).json({
         message: "Invalid credentials",
       });
+    }
 
     const match = await bcrypt.compare(
       password,
@@ -71,10 +129,11 @@ export const login = async (req, res, next) => {
       user.password,
     );
 
-    if (!match)
+    if (!match) {
       return res.status(401).json({
         message: "Invalid credentials",
       });
+    }
 
     const token = generateToken(user._id);
 
@@ -83,8 +142,11 @@ export const login = async (req, res, next) => {
 
       user: {
         id: user._id,
+
         name: user.name,
+
         email: user.email,
+
         role: user.role,
       },
     });
@@ -93,6 +155,9 @@ export const login = async (req, res, next) => {
   }
 };
 
+// =======================
+// Get Profile
+// =======================
 export const profile = async (req, res) => {
   res.json(req.user);
 };

@@ -10,9 +10,22 @@ const orderSchema = new mongoose.Schema(
 
     books: [
       {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Book",
-        required: true,
+        book: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Book",
+          required: true,
+        },
+
+        seller: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "User",
+          required: true,
+        },
+
+        price: {
+          type: Number,
+          required: true,
+        },
       },
     ],
 
@@ -21,15 +34,31 @@ const orderSchema = new mongoose.Schema(
       required: true,
     },
 
+    // Platform commission (example: 10%)
+    commission: {
+      type: Number,
+      default: 0,
+    },
+
+    // Amount seller receives after commission
+    sellerAmount: {
+      type: Number,
+      default: 0,
+    },
+
     paymentStatus: {
       type: String,
+
       enum: ["Pending", "Paid", "Failed"],
+
       default: "Pending",
     },
 
     status: {
       type: String,
+
       enum: ["Processing", "Completed", "Cancelled"],
+
       default: "Processing",
     },
 
@@ -37,6 +66,7 @@ const orderSchema = new mongoose.Schema(
       type: String,
     },
   },
+
   {
     timestamps: true,
   },

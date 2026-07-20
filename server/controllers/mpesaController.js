@@ -6,29 +6,36 @@ import Order from "../models/Order.js";
 
 import { createNotification } from "../utils/createNotification.js";
 
+import { COMMISSION_RATE } from "../config/commission.js";
+
+// ===============================
 // INITIATE STK PUSH
+// ===============================
+
 export const initiatePayment = async (req, res) => {
   try {
-    const { phone, amount, orderId } = req.body;
+    const { phone, amount, user, books } = req.body;
 
-    if (!phone || !amount || !orderId) {
+    if (!phone || !amount || !books) {
       return res.status(400).json({
-        message: "Phone, amount and orderId are required",
+        message: "Phone, amount and books are required",
       });
     }
 
-    const response = await stkPush(phone, amount, orderId);
+    const response = await stkPush(phone, amount);
 
     const payment = await Payment.create({
-      order: orderId,
+      user,
 
-      merchantRequestID: response.MerchantRequestID,
-
-      checkoutRequestID: response.CheckoutRequestID,
+      books,
 
       amount,
 
       phone,
+
+      merchantRequestID: response.MerchantRequestID,
+
+      checkoutRequestID: response.CheckoutRequestID,
 
       status: "Pending",
 
@@ -36,7 +43,7 @@ export const initiatePayment = async (req, res) => {
     });
 
     res.status(201).json({
-      message: "STK Push sent",
+      message: "STK Push sent successfully",
 
       payment,
     });
@@ -49,14 +56,17 @@ export const initiatePayment = async (req, res) => {
   }
 };
 
-// SAFARICOM CALLBACK
+// ===============================
+// M-PESA CALLBACK
+// ===============================
+
 export const mpesaCallback = async (req, res) => {
   try {
     console.log("M-PESA CALLBACK:", JSON.stringify(req.body, null, 2));
 
-    const callback = req.body.Body?.stkCallback;
+    const data = req.body.Body?.stkCallback;
 
-    if (!callback) {
+    if (!data) {
       return res.json({
         ResultCode: 0,
 
@@ -65,7 +75,7 @@ export const mpesaCallback = async (req, res) => {
     }
 
     const payment = await Payment.findOne({
-      checkoutRequestID: callback.CheckoutRequestID,
+      checkoutRequestID: data.CheckoutRequestID,
     });
 
     if (!payment) {
@@ -78,18 +88,20 @@ export const mpesaCallback = async (req, res) => {
       });
     }
 
-    payment.resultCode = callback.ResultCode;
+    payment.resultCode = data.ResultCode;
 
-    payment.resultDesc = callback.ResultDesc;
+    payment.resultDesc = data.ResultDesc;
 
-    // SUCCESSFUL PAYMENT
+    // =========================
+    // PAYMENT SUCCESSFUL
+    // =========================
 
-    if (callback.ResultCode === 0) {
+    if (data.ResultCode === 0) {
       payment.status = "Success";
 
       let receiptNumber = null;
 
-      const items = callback.CallbackMetadata?.Item || [];
+      const items = data.CallbackMetadata?.Item || [];
 
       items.forEach((item) => {
         if (item.Name === "MpesaReceiptNumber") {
@@ -99,24 +111,58 @@ export const mpesaCallback = async (req, res) => {
 
       payment.mpesaReceipt = receiptNumber;
 
-      const order = await Order.findById(payment.order);
+      // CREATE ORDER AFTER PAYMENT
 
-      if (order) {
-        order.paymentStatus = "Paid";
+      const commission = payment.amount * COMMISSION_RATE;
 
-        order.status = "Processing";
+      const sellerAmount = payment.amount - commission;
 
-        order.transactionId = receiptNumber;
+      const order = await Order.create({
+        user: payment.user,
 
-        await order.save();
+        books: payment.books.map((item) => ({
+          book: item.book,
 
+          seller: item.seller,
+
+          price: item.price,
+        })),
+
+        total: payment.amount,
+
+        commission,
+
+        sellerAmount,
+
+        paymentStatus: "Paid",
+
+        status: "Processing",
+
+        transactionId: payment.mpesaReceipt,
+      });
+
+      await order.save();
+
+      // Notify buyer
+
+      await createNotification({
+        user: payment.user,
+
+        message: "Your order payment was successful",
+      });
+
+      // Notify sellers
+
+      for (const item of payment.books) {
         await createNotification({
-          user: order.user,
+          user: item.seller,
 
-          message: "Your order payment was successful",
+          message: "You received a new paid order",
         });
       }
     } else {
+      // PAYMENT FAILED
+
       payment.status = "Failed";
     }
 
