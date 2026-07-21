@@ -12,11 +12,11 @@ import Orders from "../pages/Orders";
 import Checkout from "../pages/Checkout";
 
 // Admin
+import AdminRoute from "./AdminRoute";
 import AdminDashboard from "../pages/AdminDashboard";
-import AdminDashboard from "./pages/AdminDashboard";
-import AdminBooks from "./pages/AdminBooks";
-import AdminOrders from "./pages/AdminOrders";
-import AdminUsers from "./pages/AdminUsers";
+import AdminBooks from "../pages/AdminBooks";
+import AdminOrders from "../pages/AdminOrders";
+import AdminUsers from "../pages/AdminUsers";
 
 // Seller pages
 import SellerRegister from "../pages/SellerRegister";
@@ -29,57 +29,37 @@ export default function AppRoutes() {
   return (
     <Routes>
       {/* Home */}
-
       <Route path="/" element={<Home />} />
 
       {/* Authentication */}
-
       <Route path="/login" element={<Login />} />
-
       <Route path="/register" element={<Register />} />
 
       {/* Books */}
-
       <Route path="/books" element={<Books />} />
-
       <Route path="/books/:id" element={<BookDetails />} />
 
       {/* Cart */}
-
       <Route path="/cart" element={<Cart />} />
 
       {/* Favorites */}
-
       <Route path="/favorites" element={<Favorites />} />
 
-      {/* Customer Orders */}
-
+      {/* Orders */}
       <Route path="/orders" element={<Orders />} />
 
       {/* Checkout */}
-
       <Route path="/checkout" element={<Checkout />} />
 
-      {/* =====================
-          SELLER ROUTES
-      ===================== */}
-
+      {/* Seller Routes */}
       <Route path="/seller/register" element={<SellerRegister />} />
-
       <Route path="/seller" element={<SellerDashboard />} />
-
       <Route path="/seller/dashboard" element={<SellerDashboard />} />
-
       <Route path="/seller/add-book" element={<AddBook />} />
-
       <Route path="/seller/books" element={<MyBooks />} />
-
       <Route path="/seller/orders" element={<SellerOrders />} />
 
-      {/* =====================
-          ADMIN ROUTES
-      ===================== */}
-
+      {/* Admin Routes */}
       <Route
         path="/admin/dashboard"
         element={
