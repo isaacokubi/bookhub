@@ -1,82 +1,66 @@
 import { useEffect, useState } from "react";
-
-import { getBooks } from "../api/bookApi";
-
-import BookGrid from "../components/books/BookGrid";
-
-import SearchBar from "../components/books/SearchBar";
-
-import FilterSidebar from "../components/books/FilterSidebar";
+import { getBooks } from "../../api/bookApi";
+import BookCard from "../../components/BookCard";
 
 export default function Books() {
   const [books, setBooks] = useState([]);
 
-  const [search, setSearch] = useState("");
-
-  const [filters, setFilters] = useState({
-    category: "",
-    condition: "",
-  });
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadBooks();
-  }, [search, filters]);
+    const fetchBooks = async () => {
+      try {
+        const res = await getBooks();
 
-  const loadBooks = async () => {
-    try {
-      const res = await getBooks({
-        search,
+        console.log("Books API Response:", res.data);
 
-        ...filters,
-      });
+        setBooks(res.data.books || res.data || []);
+      } catch (error) {
+        console.log("Status:", error.response?.status);
 
-      setBooks(res.data);
-    } catch {
-      setBooks([]);
-    }
-  };
+        console.log("Backend Error:", error.response?.data);
+
+        console.log("Loading books failed:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchBooks();
+  }, []);
+
+  if (loading) {
+    return <p className="p-5 text-lg">Loading books...</p>;
+  }
 
   return (
-    <div
-      className="
-container
-mx-auto
-px-5
-py-10
-"
-    >
+    <div className="p-5">
       <h1
         className="
-text-4xl
-font-bold
-mb-8
-"
+        text-3xl
+        font-bold
+        mb-5
+        "
       >
-        Browse Books
+        All Books
       </h1>
 
-      <SearchBar search={search} setSearch={setSearch} />
-
-      <div
-        className="
-grid
-md:grid-cols-4
-gap-8
-mt-8
-"
-      >
-        <div>
-          <FilterSidebar filters={filters} setFilters={setFilters} />
-        </div>
-
+      {books.length === 0 ? (
+        <p className="text-gray-600">No books available yet.</p>
+      ) : (
         <div
           className="
-md:col-span-3
-"
+            grid
+            grid-cols-1
+            md:grid-cols-3
+            gap-5
+            "
         >
-          <BookGrid books={books} />
+          {books.map((book) => (
+            <BookCard key={book._id} book={book} />
+          ))}
         </div>
-      </div>
+      )}
     </div>
   );
 }

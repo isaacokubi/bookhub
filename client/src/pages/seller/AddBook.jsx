@@ -7,7 +7,9 @@ import { getCategories } from "../../api/categoryApi";
 export default function AddBook() {
   const [categories, setCategories] = useState([]);
 
-  const [loadingCategories, setLoadingCategories] = useState(true);
+  const [image, setImage] = useState(null);
+
+  const [preview, setPreview] = useState("");
 
   const [submitting, setSubmitting] = useState(false);
 
@@ -25,15 +27,9 @@ export default function AddBook() {
       try {
         const res = await getCategories();
 
-        console.log("Categories:", res.data);
-
-        setCategories(Array.isArray(res.data) ? res.data : []);
+        setCategories(res.data);
       } catch (error) {
-        console.log("Category loading error:", error);
-
-        toast.error("Failed to load categories");
-      } finally {
-        setLoadingCategories(false);
+        console.log("Category error:", error);
       }
     };
 
@@ -48,26 +44,45 @@ export default function AddBook() {
     });
   };
 
+  const handleImage = (e) => {
+    const file = e.target.files[0];
+
+    if (file) {
+      setImage(file);
+
+      setPreview(URL.createObjectURL(file));
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     try {
       setSubmitting(true);
 
-      const response = await addBook(formData);
+      const data = new FormData();
 
-      console.log("Book created:", response.data);
+      data.append("title", formData.title);
 
-      toast.success("Book published successfully");
+      data.append("author", formData.author);
 
-      setFormData({
-        title: "",
-        author: "",
-        price: "",
-        description: "",
-        category: "",
-        condition: "Used",
-      });
+      data.append("price", formData.price);
+
+      data.append("description", formData.description);
+
+      data.append("category", formData.category);
+
+      data.append("condition", formData.condition);
+
+      if (image) {
+        data.append("image", image);
+      }
+
+      const response = await addBook(data);
+
+      console.log(response.data);
+
+      toast.success("Book published");
     } catch (error) {
       console.log("Full error:", error);
 
@@ -81,48 +96,32 @@ export default function AddBook() {
 
   return (
     <div>
-      <h1
-        className="
-        text-3xl
-        font-bold
-        "
-      >
-        Create Book Listing
-      </h1>
+      <h1 className="text-3xl font-bold">Create Book Listing</h1>
 
-      <form
-        onSubmit={handleSubmit}
-        className="
-        space-y-4
-        mt-5
-        "
-      >
+      <form onSubmit={handleSubmit} className="space-y-4 mt-5">
         <input
           name="title"
+          placeholder="Book Title"
           value={formData.title}
           onChange={handleChange}
           className="border p-3 w-full"
-          placeholder="Book Title"
-          required
         />
 
         <input
           name="author"
+          placeholder="Author"
           value={formData.author}
           onChange={handleChange}
           className="border p-3 w-full"
-          placeholder="Author"
-          required
         />
 
         <input
           name="price"
           type="number"
+          placeholder="Price"
           value={formData.price}
           onChange={handleChange}
           className="border p-3 w-full"
-          placeholder="Price"
-          required
         />
 
         <select
@@ -130,11 +129,8 @@ export default function AddBook() {
           value={formData.category}
           onChange={handleChange}
           className="border p-3 w-full"
-          required
         >
-          <option value="">
-            {loadingCategories ? "Loading categories..." : "Select Category"}
-          </option>
+          <option value="">Select Category</option>
 
           {categories.map((category) => (
             <option key={category._id} value={category._id}>
@@ -156,25 +152,34 @@ export default function AddBook() {
 
         <textarea
           name="description"
+          placeholder="Description"
           value={formData.description}
           onChange={handleChange}
           className="border p-3 w-full"
-          placeholder="Description"
         />
 
+        <input
+          type="file"
+          accept="image/*"
+          onChange={handleImage}
+          className="border p-3 w-full"
+        />
+
+        {preview && (
+          <img src={preview} alt="preview" className="w-40 h-40 object-cover" />
+        )}
+
         <button
-          type="submit"
           disabled={submitting}
           className="
-          bg-blue-600
-          text-white
-          px-5
-          py-3
-          rounded
-          disabled:opacity-50
-          "
+bg-blue-600
+text-white
+px-5
+py-3
+rounded
+"
         >
-          {submitting ? "Publishing..." : "Publish Book"}
+          {submitting ? "Uploading..." : "Publish Book"}
         </button>
       </form>
     </div>
