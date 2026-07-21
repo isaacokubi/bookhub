@@ -28,7 +28,7 @@ export default function Orders() {
     <div className="container mx-auto py-10 px-5">
       <h1 className="text-3xl font-bold mb-6">My Orders</h1>
 
-      {orders.length === 0 ? (
+      {!orders || orders.length  === 0 ? (
         <p>No orders yet.</p>
       ) : (
         <div className="space-y-6">
