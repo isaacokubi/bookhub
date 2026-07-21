@@ -1,11 +1,17 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "react-toastify";
-import { createBook } from "../../api/sellerApi";
+
+import { addBook } from "../../api/bookApi";
+import { getCategories } from "../../api/categoryApi";
 
 export default function AddBook() {
-  const [image, setImage] = useState(null);
+  const [categories, setCategories] = useState([]);
 
-  const [book, setBook] = useState({
+  const [loadingCategories, setLoadingCategories] = useState(true);
+
+  const [submitting, setSubmitting] = useState(false);
+
+  const [formData, setFormData] = useState({
     title: "",
     author: "",
     price: "",
@@ -14,35 +20,47 @@ export default function AddBook() {
     condition: "Used",
   });
 
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const res = await getCategories();
+
+        console.log("Categories:", res.data);
+
+        setCategories(Array.isArray(res.data) ? res.data : []);
+      } catch (error) {
+        console.log("Category loading error:", error);
+
+        toast.error("Failed to load categories");
+      } finally {
+        setLoadingCategories(false);
+      }
+    };
+
+    loadCategories();
+  }, []);
+
   const handleChange = (e) => {
-    setBook({
-      ...book,
+    setFormData({
+      ...formData,
+
       [e.target.name]: e.target.value,
     });
   };
 
-  const submit = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!image) {
-      toast.error("Please select a book image");
-      return;
-    }
-
     try {
-      const formData = new FormData();
+      setSubmitting(true);
 
-      Object.keys(book).forEach((key) => {
-        formData.append(key, book[key]);
-      });
+      const response = await addBook(formData);
 
-      formData.append("image", image);
+      console.log("Book created:", response.data);
 
-      await createBook(formData);
+      toast.success("Book published successfully");
 
-      toast.success("Book uploaded successfully");
-
-      setBook({
+      setFormData({
         title: "",
         author: "",
         price: "",
@@ -50,145 +68,113 @@ export default function AddBook() {
         category: "",
         condition: "Used",
       });
-
-      setImage(null);
     } catch (error) {
-      console.log(error.response?.data || error);
+      console.log("Full error:", error);
 
-      toast.error("Failed to upload book");
+      console.log("Response:", error.response?.data);
+
+      toast.error(error.response?.data?.message || "Failed to add book");
+    } finally {
+      setSubmitting(false);
     }
   };
 
   return (
-    <div
-      className="
-      container
-      mx-auto
-      max-w-xl
-      py-10
-      "
-    >
+    <div>
       <h1
         className="
         text-3xl
         font-bold
-        mb-5
         "
       >
-        Add Book
+        Create Book Listing
       </h1>
 
       <form
-        onSubmit={submit}
+        onSubmit={handleSubmit}
         className="
         space-y-4
+        mt-5
         "
       >
         <input
           name="title"
-          value={book.title}
+          value={formData.title}
           onChange={handleChange}
-          className="
-          border
-          p-3
-          w-full
-          rounded
-          "
-          placeholder="Book title"
+          className="border p-3 w-full"
+          placeholder="Book Title"
+          required
         />
 
         <input
           name="author"
-          value={book.author}
+          value={formData.author}
           onChange={handleChange}
-          className="
-          border
-          p-3
-          w-full
-          rounded
-          "
+          className="border p-3 w-full"
           placeholder="Author"
+          required
         />
 
         <input
           name="price"
-          value={book.price}
-          onChange={handleChange}
           type="number"
-          className="
-          border
-          p-3
-          w-full
-          rounded
-          "
+          value={formData.price}
+          onChange={handleChange}
+          className="border p-3 w-full"
           placeholder="Price"
-        />
-
-        <textarea
-          name="description"
-          value={book.description}
-          onChange={handleChange}
-          className="
-          border
-          p-3
-          w-full
-          rounded
-          "
-          placeholder="Description"
-        />
-
-        <input
-          name="category"
-          value={book.category}
-          onChange={handleChange}
-          className="
-          border
-          p-3
-          w-full
-          rounded
-          "
-          placeholder="Category"
+          required
         />
 
         <select
-          name="condition"
-          value={book.condition}
+          name="category"
+          value={formData.category}
           onChange={handleChange}
-          className="
-          border
-          p-3
-          w-full
-          rounded
-          "
+          className="border p-3 w-full"
+          required
+        >
+          <option value="">
+            {loadingCategories ? "Loading categories..." : "Select Category"}
+          </option>
+
+          {categories.map((category) => (
+            <option key={category._id} value={category._id}>
+              {category.name}
+            </option>
+          ))}
+        </select>
+
+        <select
+          name="condition"
+          value={formData.condition}
+          onChange={handleChange}
+          className="border p-3 w-full"
         >
           <option value="Used">Used</option>
 
           <option value="New">New</option>
         </select>
 
-        <input
-          type="file"
-          accept="image/*"
-          className="
-          border
-          p-3
-          w-full
-          "
-          onChange={(e) => setImage(e.target.files[0])}
+        <textarea
+          name="description"
+          value={formData.description}
+          onChange={handleChange}
+          className="border p-3 w-full"
+          placeholder="Description"
         />
 
         <button
           type="submit"
+          disabled={submitting}
           className="
           bg-blue-600
           text-white
           px-5
           py-3
           rounded
-          hover:bg-blue-700
+          disabled:opacity-50
           "
         >
-          Upload Book
+          {submitting ? "Publishing..." : "Publish Book"}
         </button>
       </form>
     </div>

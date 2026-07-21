@@ -20,13 +20,13 @@ import notificationRoutes from "./routes/notificationRoutes.js";
 import walletRoutes from "./routes/walletRoutes.js";
 import withdrawalRoutes from "./routes/withdrawalRoutes.js";
 import sellerRoutes from "./routes/sellerRoutes.js";
+import categoryRoutes from "./routes/categoryRoutes.js";
 
 import sanitize from "./middleware/sanitize.js";
 import { securityMiddleware } from "./middleware/security.js";
 import errorHandler from "./middleware/errorHandler.js";
 
 import setupSocket from "./sockets/socket.js";
-
 
 // ===============================
 // ENVIRONMENT DEBUG CHECKS
@@ -178,6 +178,7 @@ app.use("/api/wallet", walletRoutes);
 app.use("/api/withdrawals", withdrawalRoutes);
 
 app.use("/api/seller", sellerRoutes);
+app.use("/api/categories", categoryRoutes);
 
 // ===============================
 // ERROR HANDLER
