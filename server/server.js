@@ -29,30 +29,58 @@ import setupSocket from "./sockets/socket.js";
 
 dotenv.config();
 
+// ===============================
+// ENVIRONMENT DEBUG CHECKS
+// ===============================
+
 console.log(
   "RESEND_API_KEY:",
   process.env.RESEND_API_KEY ? "Loaded" : "Missing",
 );
 
+console.log("MPESA ENV CHECK:", {
+  consumerKey: process.env.MPESA_CONSUMER_KEY ? "Loaded" : "Missing",
+
+  consumerSecret: process.env.MPESA_CONSUMER_SECRET ? "Loaded" : "Missing",
+
+  shortcode: process.env.MPESA_SHORTCODE || "Missing",
+
+  passkey: process.env.MPESA_PASSKEY ? "Loaded" : "Missing",
+
+  callback: process.env.MPESA_CALLBACK_URL || "Missing",
+});
+
 const app = express();
 
-// Database
+// ===============================
+// DATABASE
+// ===============================
+
 connectDatabase();
 
-// Security middleware
+// ===============================
+// SECURITY
+// ===============================
+
 securityMiddleware(app);
 
-// Allowed frontend URLs
+// ===============================
+// ALLOWED FRONTEND URLS
+// ===============================
+
 const allowedOrigins = [
   "http://localhost:5173",
+
   "https://bookhub-swart.vercel.app",
 ];
 
+// ===============================
 // CORS
+// ===============================
+
 app.use(
   cors({
     origin: function (origin, callback) {
-      // Allow Postman, mobile apps, server requests
       if (!origin) {
         return callback(null, true);
       }
@@ -72,39 +100,61 @@ app.use(
   }),
 );
 
+// ===============================
+// BODY PARSER
+// ===============================
+
 app.use(express.json());
 
 app.use(cookieParser());
+
+// ===============================
+// MIDDLEWARE
+// ===============================
 
 app.use(sanitize);
 
 app.use(morgan("dev"));
 
-// Debug API requests
+// ===============================
+// REQUEST LOGGER
+// ===============================
+
 app.use((req, res, next) => {
   console.log(`${req.method} ${req.originalUrl}`);
 
   next();
 });
 
-// Root route
+// ===============================
+// ROOT ROUTE
+// ===============================
+
 app.get("/", (req, res) => {
   res.json({
     message: "BookHub Kenya API Running",
+
     status: "success",
   });
 });
 
-// Health check for Render
+// ===============================
+// HEALTH CHECK
+// ===============================
+
 app.get("/health", (req, res) => {
   res.json({
     status: "OK",
+
     server: "BookHub Kenya API",
+
     time: new Date(),
   });
 });
 
-// API Routes
+// ===============================
+// API ROUTES
+// ===============================
 
 app.use("/api/auth", authRoutes);
 
@@ -130,16 +180,24 @@ app.use("/api/withdrawals", withdrawalRoutes);
 
 app.use("/api/seller", sellerRoutes);
 
-// Error handler (must be last)
+// ===============================
+// ERROR HANDLER
+// MUST BE LAST
+// ===============================
+
 app.use(errorHandler);
 
-// HTTP server
+// ===============================
+// HTTP SERVER
+// ===============================
 
 const PORT = process.env.PORT || 5000;
 
 const httpServer = createServer(app);
 
-// Socket.io
+// ===============================
+// SOCKET.IO
+// ===============================
 
 const io = new Server(httpServer, {
   cors: {
@@ -153,7 +211,9 @@ const io = new Server(httpServer, {
 
 setupSocket(io);
 
-// Start server
+// ===============================
+// START SERVER
+// ===============================
 
 httpServer.listen(PORT, () => {
   console.log(`BookHub API running on port ${PORT}`);
