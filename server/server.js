@@ -29,60 +29,132 @@ import setupSocket from "./sockets/socket.js";
 
 dotenv.config();
 
-console.log("RESEND_API_KEY:", process.env.RESEND_API_KEY);
+console.log(
+  "RESEND_API_KEY:",
+  process.env.RESEND_API_KEY ? "Loaded" : "Missing",
+);
 
 const app = express();
 
+// Database
 connectDatabase();
 
+// Security middleware
 securityMiddleware(app);
 
+// Allowed frontend URLs
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://bookhub-swart.vercel.app",
+];
+
+// CORS
 app.use(
   cors({
-    origin: ["http://localhost:5173", "https://bookhub-swart.vercel.app"],
+    origin: function (origin, callback) {
+      // Allow Postman, mobile apps, server requests
+      if (!origin) {
+        return callback(null, true);
+      }
+
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      return callback(new Error("CORS blocked: " + origin));
+    },
+
     credentials: true,
+
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+
+    allowedHeaders: ["Content-Type", "Authorization"],
   }),
 );
+
 app.use(express.json());
-app.use(sanitize);
+
 app.use(cookieParser());
+
+app.use(sanitize);
+
 app.use(morgan("dev"));
 
+// Debug API requests
+app.use((req, res, next) => {
+  console.log(`${req.method} ${req.originalUrl}`);
+
+  next();
+});
+
+// Root route
 app.get("/", (req, res) => {
   res.json({
     message: "BookHub Kenya API Running",
+    status: "success",
   });
 });
 
+// Health check for Render
+app.get("/health", (req, res) => {
+  res.json({
+    status: "OK",
+    server: "BookHub Kenya API",
+    time: new Date(),
+  });
+});
+
+// API Routes
+
 app.use("/api/auth", authRoutes);
+
 app.use("/api/books", bookRoutes);
+
 app.use("/api/orders", orderRoutes);
+
 app.use("/api/mpesa", mpesaRoutes);
+
 app.use("/api/messages", messageRoutes);
+
 app.use("/api/reviews", reviewRoutes);
+
 app.use("/api/favorites", favoriteRoutes);
+
 app.use("/api/admin", adminRoutes);
+
 app.use("/api/notifications", notificationRoutes);
+
 app.use("/api/wallet", walletRoutes);
+
 app.use("/api/withdrawals", withdrawalRoutes);
+
 app.use("/api/seller", sellerRoutes);
 
+// Error handler (must be last)
 app.use(errorHandler);
+
+// HTTP server
 
 const PORT = process.env.PORT || 5000;
 
 const httpServer = createServer(app);
 
+// Socket.io
+
 const io = new Server(httpServer, {
   cors: {
-    origin: process.env.CLIENT_URL,
+    origin: allowedOrigins,
+
     credentials: true,
+
+    methods: ["GET", "POST"],
   },
 });
 
 setupSocket(io);
 
+// Start server
+
 httpServer.listen(PORT, () => {
-  console.log(`Server running on ${PORT}`);
+  console.log(`BookHub API running on port ${PORT}`);
 });
