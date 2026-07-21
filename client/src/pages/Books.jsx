@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { getBooks } from "../../api/bookApi";
-import BookCard from "../../components/BookCard";
+import { getBooks } from "../api/bookApi";
+import BookCard from "../components/books/BookCard";
 
 export default function Books() {
   const [books, setBooks] = useState([]);
