@@ -1,186 +1,92 @@
-import { Link, useNavigate } from "react-router-dom";
-import { toast } from "react-toastify";
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { getDashboardStats } from "../api/adminApi";
 
 export default function AdminDashboard() {
-  const navigate = useNavigate();
+  const [stats, setStats] = useState({
+    users: 0,
+    books: 0,
+    orders: 0,
+    sellers: 0,
+  });
 
-  const logout = () => {
-    localStorage.removeItem("token");
+  const [loading, setLoading] = useState(true);
 
-    localStorage.removeItem("user");
+  useEffect(() => {
+    loadDashboard();
+  }, []);
 
-    toast.success("Logged out successfully");
+  const loadDashboard = async () => {
+    try {
+      const data = await getDashboardStats();
 
-    navigate("/login");
+      setStats(data);
+    } catch (error) {
+      console.error("Dashboard loading failed:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  return (
-    <div
-      className="
-      container
-      mx-auto
-      py-10
-      px-5
-      "
-    >
-      <div
-        className="
-        bg-slate-900
-        text-white
-        rounded-xl
-        p-8
-        mb-8
-        "
-      >
-        <h1
-          className="
-          text-3xl
-          font-bold
-          "
-        >
-          Admin Dashboard
-        </h1>
+  if (loading) {
+    return (
+      <div className="p-8">
+        <h1 className="text-3xl font-bold">Loading Dashboard...</h1>
+      </div>
+    );
+  }
 
-        <p
-          className="
-          mt-3
-          text-gray-300
-          "
-        >
-          Manage BookHub users, sellers, books and orders.
-        </p>
+  return (
+    <div className="p-8">
+      <h1 className="text-3xl font-bold mb-8">Admin Dashboard</h1>
+
+      <div className="grid md:grid-cols-4 gap-6">
+        <div className="bg-white p-6 rounded shadow">
+          <h3 className="text-gray-500">Users</h3>
+
+          <p className="text-3xl font-bold">{stats.users}</p>
+        </div>
+
+        <div className="bg-white p-6 rounded shadow">
+          <h3 className="text-gray-500">Books</h3>
+
+          <p className="text-3xl font-bold">{stats.books}</p>
+        </div>
+
+        <div className="bg-white p-6 rounded shadow">
+          <h3 className="text-gray-500">Orders</h3>
+
+          <p className="text-3xl font-bold">{stats.orders}</p>
+        </div>
+
+        <div className="bg-white p-6 rounded shadow">
+          <h3 className="text-gray-500">Sellers</h3>
+
+          <p className="text-3xl font-bold">{stats.sellers}</p>
+        </div>
       </div>
 
-      <div
-        className="
-        grid
-        md:grid-cols-2
-        lg:grid-cols-4
-        gap-6
-        "
-      >
+      <div className="mt-8 flex flex-wrap gap-4">
         <Link
-          to="/admin/users"
-          className="
-          bg-blue-600
-          text-white
-          rounded-xl
-          p-6
-          hover:bg-blue-700
-          "
+          to="/admin/books"
+          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
         >
-          <h2
-            className="
-            text-xl
-            font-bold
-            "
-          >
-            Users
-          </h2>
-
-          <p className="mt-2">Manage customers</p>
-        </Link>
-
-        <Link
-          to="/admin/sellers"
-          className="
-          bg-green-600
-          text-white
-          rounded-xl
-          p-6
-          hover:bg-green-700
-          "
-        >
-          <h2
-            className="
-            text-xl
-            font-bold
-            "
-          >
-            Sellers
-          </h2>
-
-          <p className="mt-2">Approve and manage sellers</p>
+          Books
         </Link>
 
         <Link
           to="/admin/orders"
-          className="
-          bg-purple-600
-          text-white
-          rounded-xl
-          p-6
-          hover:bg-purple-700
-          "
+          className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
         >
-          <h2
-            className="
-            text-xl
-            font-bold
-            "
-          >
-            Orders
-          </h2>
-
-          <p className="mt-2">Monitor payments and escrow</p>
+          Orders
         </Link>
 
         <Link
-          to="/admin/books"
-          className="
-          bg-orange-600
-          text-white
-          rounded-xl
-          p-6
-          hover:bg-orange-700
-          "
+          to="/admin/users"
+          className="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700"
         >
-          <h2
-            className="
-            text-xl
-            font-bold
-            "
-          >
-            Books
-          </h2>
-
-          <p className="mt-2">Manage listings</p>
+          Users
         </Link>
-      </div>
-
-      <div
-        className="
-        mt-10
-        flex
-        gap-4
-        flex-wrap
-        "
-      >
-        <Link
-          to="/admin/announcements"
-          className="
-          bg-indigo-600
-          text-white
-          px-5
-          py-3
-          rounded-lg
-          "
-        >
-          Announcements
-        </Link>
-
-        <button
-          onClick={logout}
-          className="
-          bg-red-600
-          text-white
-          px-5
-          py-3
-          rounded-lg
-          "
-        >
-          Logout
-        </button>
       </div>
     </div>
   );

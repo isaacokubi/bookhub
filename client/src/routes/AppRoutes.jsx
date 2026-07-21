@@ -13,6 +13,10 @@ import Checkout from "../pages/Checkout";
 
 // Admin
 import AdminDashboard from "../pages/AdminDashboard";
+import AdminDashboard from "./pages/AdminDashboard";
+import AdminBooks from "./pages/AdminBooks";
+import AdminOrders from "./pages/AdminOrders";
+import AdminUsers from "./pages/AdminUsers";
 
 // Seller pages
 import SellerRegister from "../pages/SellerRegister";
@@ -20,7 +24,6 @@ import SellerDashboard from "../pages/seller/SellerDashboard";
 import AddBook from "../pages/seller/AddBook";
 import MyBooks from "../pages/seller/MyBooks";
 import SellerOrders from "../pages/seller/SellerOrders";
-
 
 export default function AppRoutes() {
   return (
@@ -77,7 +80,41 @@ export default function AppRoutes() {
           ADMIN ROUTES
       ===================== */}
 
-      <Route path="/admin" element={<AdminDashboard />} />
+      <Route
+        path="/admin/dashboard"
+        element={
+          <AdminRoute>
+            <AdminDashboard />
+          </AdminRoute>
+        }
+      />
+
+      <Route
+        path="/admin/books"
+        element={
+          <AdminRoute>
+            <AdminBooks />
+          </AdminRoute>
+        }
+      />
+
+      <Route
+        path="/admin/orders"
+        element={
+          <AdminRoute>
+            <AdminOrders />
+          </AdminRoute>
+        }
+      />
+
+      <Route
+        path="/admin/users"
+        element={
+          <AdminRoute>
+            <AdminUsers />
+          </AdminRoute>
+        }
+      />
     </Routes>
   );
 }

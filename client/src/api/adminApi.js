@@ -1,15 +1,45 @@
-import api from "./axios";
+import axios from "axios";
 
-export const getDashboard = () => api.get("/admin/dashboard");
+const API = "https://bookhub-1-d9b3.onrender.com/api/admin";
 
-export const getUsers = () => api.get("/admin/users");
+const getToken = () => localStorage.getItem("token");
 
-export const getPendingBooks = () => api.get("/admin/books/pending");
+export const getDashboardStats = async () => {
+  const response = await axios.get(`${API}/dashboard`, {
+    headers: {
+      Authorization: `Bearer ${getToken()}`,
+    },
+  });
 
-export const approveBook = (id) => api.put(`/admin/books/${id}/approve`);
+  return response.data;
+};
 
-export const rejectBook = (id) => api.put(`/admin/books/${id}/reject`);
+export const getUsers = async () => {
+  const response = await axios.get(`${API}/users`, {
+    headers: {
+      Authorization: `Bearer ${getToken()}`,
+    },
+  });
 
-export const getPayments = () => api.get("/admin/payments");
+  return response.data;
+};
 
-export const getPayouts = () => api.get("/admin/payouts");
+export const getBooks = async () => {
+  const response = await axios.get(`${API}/books`, {
+    headers: {
+      Authorization: `Bearer ${getToken()}`,
+    },
+  });
+
+  return response.data;
+};
+
+export const getOrders = async () => {
+  const response = await axios.get(`${API}/orders`, {
+    headers: {
+      Authorization: `Bearer ${getToken()}`,
+    },
+  });
+
+  return response.data;
+};
