@@ -13,11 +13,7 @@ export default function Checkout() {
 
   const [loading, setLoading] = useState(false);
 
-  const amount = cart.reduce(
-    (sum, item) => sum + Number(item.price),
-
-    0,
-  );
+  const amount = cart.reduce((sum, item) => sum + Number(item.price), 0);
 
   const pay = async () => {
     if (!phone) {
@@ -35,18 +31,53 @@ export default function Checkout() {
     try {
       setLoading(true);
 
-      // 1. Create order first
+      // Format phone number
+
+      let formattedPhone = phone;
+
+      if (phone.startsWith("07")) {
+        formattedPhone = "254" + phone.substring(1);
+      }
+
+      /*
+        CREATE ORDER
+
+        Saves:
+        - book id
+        - seller id
+        - price
+      */
+
       const orderResponse = await createOrder({
-        books: cart.map((item) => item._id),
+        books: cart.map((item) => ({
+          book: item._id,
+
+          seller: item.seller?._id || item.seller || null,
+
+          price: Number(item.price),
+        })),
 
         total: amount,
       });
 
+      console.log("Created order:", orderResponse.data);
+
+      if (!orderResponse.data || !orderResponse.data._id) {
+        throw new Error("Order was not created");
+      }
+
       const orderId = orderResponse.data._id;
 
-      // 2. Initiate M-Pesa payment
+      // Save pending order
+
+      localStorage.setItem("pendingOrder", orderId);
+
+      /*
+        START MPESA PAYMENT
+      */
+
       await initiateMpesa({
-        phone,
+        phone: formattedPhone,
 
         amount,
 
@@ -55,13 +86,9 @@ export default function Checkout() {
 
       toast.success("M-Pesa prompt sent. Enter your PIN.");
     } catch (error) {
-      console.log(
-        "Payment error:",
+      console.log("Payment error:", error.response?.data || error.message);
 
-        error.response?.data || error.message,
-      );
-
-      toast.error("Payment initiation failed");
+      toast.error(error.response?.data?.message || "Payment initiation failed");
     } finally {
       setLoading(false);
     }
@@ -105,11 +132,29 @@ export default function Checkout() {
           Order Summary
         </h2>
 
-        <div className="space-y-2">
+        <div className="space-y-3">
           <p>
             Number of Books:
             <b> {cart.length}</b>
           </p>
+
+          <div>
+            {cart.map((item) => (
+              <div
+                key={item._id}
+                className="
+                  flex
+                  justify-between
+                  border-b
+                  py-2
+                  "
+              >
+                <span>{item.title}</span>
+
+                <span>KES {item.price}</span>
+              </div>
+            ))}
+          </div>
 
           <p
             className="
@@ -124,7 +169,7 @@ export default function Checkout() {
 
         <input
           type="text"
-          placeholder="2547XXXXXXXX"
+          placeholder="07XXXXXXXX"
           value={phone}
           onChange={(e) => setPhone(e.target.value)}
           className="
