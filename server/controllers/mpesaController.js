@@ -14,20 +14,26 @@ import { COMMISSION_RATE } from "../config/commission.js";
 
 export const initiatePayment = async (req, res) => {
   try {
-    const { phone, amount, user, books } = req.body;
+    const { phone, amount, orderId } = req.body;
 
-    if (!phone || !amount || !books) {
+    if (!phone || !amount || !orderId) {
       return res.status(400).json({
-        message: "Phone, amount and books are required",
+        message: "Phone, amount and orderId are required",
       });
     }
 
-    const response = await stkPush(phone, amount);
+    const order = await Order.findById(orderId);
+
+    if (!order) {
+      return res.status(404).json({
+        message: "Order not found",
+      });
+    }
+
+    const response = await stkPush(phone, amount, orderId);
 
     const payment = await Payment.create({
-      user,
-
-      books,
+      order: order._id,
 
       amount,
 
@@ -43,7 +49,7 @@ export const initiatePayment = async (req, res) => {
     });
 
     res.status(201).json({
-      message: "STK Push sent successfully",
+      message: "STK Push sent",
 
       payment,
     });
@@ -109,64 +115,75 @@ export const mpesaCallback = async (req, res) => {
         }
       });
 
-      payment.mpesaReceipt = receiptNumber;
+     
+     payment.mpesaReceiptNumber = receiptNumber;
 
-      // CREATE ORDER AFTER PAYMENT
+      // SAVE PAYMENT FIRST
+
+      await payment.save();
+
+      // =========================
+      // UPDATE EXISTING ORDER
+      // =========================
+
+      const order = await Order.findById(payment.order);
+
+      if (order) {
+        order.paymentStatus = "Paid";
+
+        order.status = "Processing";
+
+        order.transactionId = payment.mpesaReceipt;
+
+        await order.save();
+      }
+
+      // COMMISSION CALCULATION
 
       const commission = payment.amount * COMMISSION_RATE;
 
       const sellerAmount = payment.amount - commission;
 
-      const order = await Order.create({
-        user: payment.user,
-
-        books: payment.books.map((item) => ({
-          book: item.book,
-
-          seller: item.seller,
-
-          price: item.price,
-        })),
-
-        total: payment.amount,
-
+      console.log({
         commission,
 
         sellerAmount,
-
-        paymentStatus: "Paid",
-
-        status: "Processing",
-
-        transactionId: payment.mpesaReceipt,
       });
 
-      await order.save();
+      // =========================
+      // NOTIFY BUYER
+      // =========================
 
-      // Notify buyer
-
-      await createNotification({
-        user: payment.user,
-
-        message: "Your order payment was successful",
-      });
-
-      // Notify sellers
-
-      for (const item of payment.books) {
+      if (order?.buyer) {
         await createNotification({
-          user: item.seller,
+          user: order.buyer,
 
-          message: "You received a new paid order",
+          message: "Your order payment was successful",
         });
+      }
+
+      // =========================
+      // NOTIFY SELLERS
+      // =========================
+
+      if (order?.books) {
+        for (const item of order.books) {
+          if (item.seller) {
+            await createNotification({
+              user: item.seller,
+
+              message: "You received a new paid order",
+            });
+          }
+        }
       }
     } else {
       // PAYMENT FAILED
 
       payment.status = "Failed";
-    }
 
-    await payment.save();
+      await payment.save();
+    }
 
     res.json({
       ResultCode: 0,

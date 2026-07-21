@@ -32,7 +32,6 @@ export default function Checkout() {
       setLoading(true);
 
       // Format phone number
-
       let formattedPhone = phone;
 
       if (phone.startsWith("07")) {
@@ -40,12 +39,14 @@ export default function Checkout() {
       }
 
       /*
-        CREATE ORDER
+        STEP 1:
+        CREATE ORDER FIRST
 
-        Saves:
-        - book id
-        - seller id
-        - price
+        This creates:
+        Order status = Pending
+
+        We will update this same order
+        after M-Pesa callback
       */
 
       const orderResponse = await createOrder({
@@ -60,20 +61,43 @@ export default function Checkout() {
         total: amount,
       });
 
-      console.log("Created order:", orderResponse.data);
+      console.log("Created order:", orderResponse);
 
-      if (!orderResponse.data || !orderResponse.data._id) {
+      /*
+        Depending on your orderApi.js,
+        response may be:
+
+        orderResponse._id
+
+        OR
+
+        orderResponse.data._id
+
+      */
+
+      const orderId = orderResponse._id || orderResponse.data?._id;
+
+      if (!orderId) {
         throw new Error("Order was not created");
       }
 
-      const orderId = orderResponse.data._id;
+      console.log("Order ID:", orderId);
 
-      // Save pending order
+      // Store pending order
 
       localStorage.setItem("pendingOrder", orderId);
 
       /*
+        STEP 2:
         START MPESA PAYMENT
+
+        Send orderId
+
+        Backend Payment model stores:
+
+        payment.order = orderId
+
+        Callback updates this order
       */
 
       await initiateMpesa({
@@ -143,11 +167,11 @@ export default function Checkout() {
               <div
                 key={item._id}
                 className="
-                  flex
-                  justify-between
-                  border-b
-                  py-2
-                  "
+                flex
+                justify-between
+                border-b
+                py-2
+                "
               >
                 <span>{item.title}</span>
 

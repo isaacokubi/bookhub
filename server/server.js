@@ -39,7 +39,7 @@ securityMiddleware(app);
 
 app.use(
   cors({
-    origin: ["http://localhost:5173", "https://bookhub-swart.vercel.app/"],
+    origin: ["http://localhost:5173", "https://bookhub-swart.vercel.app"],
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   }),
