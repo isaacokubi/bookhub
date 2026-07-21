@@ -1,5 +1,5 @@
+import "dotenv/config";
 import express from "express";
-import dotenv from "dotenv";
 import cors from "cors";
 import morgan from "morgan";
 import cookieParser from "cookie-parser";
@@ -27,7 +27,6 @@ import errorHandler from "./middleware/errorHandler.js";
 
 import setupSocket from "./sockets/socket.js";
 
-dotenv.config();
 
 // ===============================
 // ENVIRONMENT DEBUG CHECKS

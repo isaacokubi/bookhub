@@ -10,7 +10,6 @@ export const getMpesaToken = async () => {
 
     const response = await axios.get(
       "https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials",
-
       {
         headers: {
           Authorization: `Basic ${auth}`,
@@ -28,12 +27,14 @@ export const getMpesaToken = async () => {
 
 export const stkPush = async (phone, amount, reference) => {
   try {
+    const config = mpesaConfig();
+
     console.log("MPESA CONFIG CHECK:", {
-      shortCode: mpesaConfig.shortCode,
+      shortCode: config.shortCode,
 
-      passKey: mpesaConfig.passKey ? "Loaded" : "Missing",
+      passKey: config.passKey ? "Loaded" : "Missing",
 
-      callbackURL: mpesaConfig.callbackURL,
+      callbackURL: config.callbackURL,
     });
 
     const token = await getMpesaToken();
@@ -41,11 +42,11 @@ export const stkPush = async (phone, amount, reference) => {
     const timestamp = moment().format("YYYYMMDDHHmmss");
 
     const password = Buffer.from(
-      mpesaConfig.shortCode + mpesaConfig.passKey + timestamp,
+      config.shortCode + config.passKey + timestamp,
     ).toString("base64");
 
     const payload = {
-      BusinessShortCode: mpesaConfig.shortCode,
+      BusinessShortCode: config.shortCode,
 
       Password: password,
 
@@ -57,11 +58,11 @@ export const stkPush = async (phone, amount, reference) => {
 
       PartyA: phone,
 
-      PartyB: mpesaConfig.shortCode,
+      PartyB: config.shortCode,
 
       PhoneNumber: phone,
 
-      CallBackURL: mpesaConfig.callbackURL,
+      CallBackURL: config.callbackURL,
 
       AccountReference: reference,
 
@@ -96,11 +97,7 @@ export const stkPush = async (phone, amount, reference) => {
 
     return response.data;
   } catch (error) {
-    console.log(
-      "STK PUSH ERROR:",
-
-      error.response?.data || error.message,
-    );
+    console.log("STK PUSH ERROR:", error.response?.data || error.message);
 
     throw error;
   }

@@ -1,4 +1,4 @@
-export default {
+const mpesaConfig = () => ({
   consumerKey: process.env.MPESA_CONSUMER_KEY,
 
   consumerSecret: process.env.MPESA_CONSUMER_SECRET,
@@ -10,4 +10,6 @@ export default {
   callbackURL: process.env.MPESA_CALLBACK_URL,
 
   environment: process.env.MPESA_ENV || "sandbox",
-};
+});
+
+export default mpesaConfig;
