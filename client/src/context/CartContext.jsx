@@ -1,123 +1,96 @@
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useState,
-} from "react";
-
+import { createContext, useContext, useEffect, useState } from "react";
 
 const CartContext = createContext();
 
-
 export function CartProvider({ children }) {
+  const getCartKey = () => {
+    try {
+      const user = JSON.parse(localStorage.getItem("user"));
 
+      return user?._id ? `cart_${user._id}` : "cart_guest";
+    } catch (error) {
+      return "cart_guest";
+    }
+  };
 
-  const [cart, setCart] = useState(() => {
+  const loadCart = () => {
+    try {
+      const savedCart = localStorage.getItem(getCartKey());
 
-    const savedCart =
-      localStorage.getItem("cart");
+      return savedCart ? JSON.parse(savedCart) : [];
+    } catch (error) {
+      console.error("Failed to load cart:", error);
 
-    return savedCart
-      ? JSON.parse(savedCart)
-      : [];
+      return [];
+    }
+  };
 
-  });
+  const [cart, setCart] = useState(loadCart);
 
-
+  // Reload cart when user changes
+  useEffect(() => {
+    setCart(loadCart());
+  }, []);
 
   // Save cart whenever it changes
   useEffect(() => {
-
-    localStorage.setItem(
-      "cart",
-      JSON.stringify(cart)
-    );
-
+    try {
+      localStorage.setItem(getCartKey(), JSON.stringify(cart));
+    } catch (error) {
+      console.error("Failed to save cart:", error);
+    }
   }, [cart]);
 
-
-
-
   const addToCart = (book) => {
+    setCart((prev) => {
+      const exists = prev.some((item) => item._id === book._id);
 
-    setCart((prev)=>{
-
-      const exists = prev.some(
-        (item)=>item._id === book._id
-      );
-
-
-      if(exists){
-
+      if (exists) {
         return prev;
-
       }
 
-
-      return [
-        ...prev,
-        book
-      ];
-
+      return [...prev, book];
     });
-
   };
-
-
-
 
   const removeFromCart = (id) => {
-
-    setCart((prev)=>
-      prev.filter(
-        (item)=>item._id !== id
-      )
-    );
-
+    setCart((prev) => prev.filter((item) => item._id !== id));
   };
-
-
-
 
   const clearCart = () => {
-
     setCart([]);
 
+    try {
+      localStorage.removeItem(getCartKey());
+    } catch (error) {
+      console.error("Failed to clear cart:", error);
+    }
   };
 
-
-
+  const cartCount = cart.length;
 
   return (
-
     <CartContext.Provider
-
       value={{
-
         cart,
-
+        cartCount,
         addToCart,
-
         removeFromCart,
-
         clearCart,
-
+        setCart,
       }}
-
     >
-
       {children}
-
     </CartContext.Provider>
-
   );
-
 }
 
+export function useCart() {
+  const context = useContext(CartContext);
 
+  if (!context) {
+    throw new Error("useCart must be used within CartProvider");
+  }
 
-export function useCart(){
-
-  return useContext(CartContext);
-
+  return context;
 }

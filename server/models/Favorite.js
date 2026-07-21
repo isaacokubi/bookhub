@@ -1,6 +1,5 @@
 import mongoose from "mongoose";
 
-
 const favoriteSchema = new mongoose.Schema(
   {
     user: {
@@ -17,9 +16,8 @@ const favoriteSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  }
+  },
 );
-
 
 // prevent duplicate favorites
 favoriteSchema.index(
@@ -29,11 +27,7 @@ favoriteSchema.index(
   },
   {
     unique: true,
-  }
+  },
 );
 
-
-export default mongoose.model(
-  "Favorite",
-  favoriteSchema
-);
+export default mongoose.model("Favorite", favoriteSchema);

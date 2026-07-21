@@ -21,7 +21,7 @@ export const addFavorite = async (req, res) => {
 export const getFavorites = async (req, res) => {
   try {
     const favorites = await Favorite.find({
-      user: req.user.id,
+    user: req.user._id,
     }).populate("book");
 
     res.json(favorites);

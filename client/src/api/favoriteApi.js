@@ -1,64 +1,57 @@
 import axios from "axios";
 
-
-const API =
-"https://bookhub-1-d9b3.onrender.com/api/favorites";
-
-
+const API = `${import.meta.env.VITE_API_URL}/api/favorites`;
 
 const getAuthConfig = () => {
-
   const token = localStorage.getItem("token");
 
-
   return {
-    headers:{
-      Authorization:`Bearer ${token}`
-    }
-  };
-
-};
-
-
-
-
-
-export const addFavorite = (bookId) => {
-
-  return axios.post(
-    API,
-    {
-      bookId,
+    headers: {
+      Authorization: token ? `Bearer ${token}` : "",
     },
-    getAuthConfig()
-  );
-
+  };
 };
 
+export const addFavorite = async (bookId) => {
+  try {
+    const response = await axios.post(API, { bookId }, getAuthConfig());
 
-
-
-
-
-export const getFavorites = () => {
-
-  return axios.get(
-    API,
-    getAuthConfig()
-  );
-
+    return response.data;
+  } catch (error) {
+    console.error(
+      "Add favorite failed:",
+      error.response?.data || error.message,
+    );
+    throw error;
+  }
 };
 
+export const getFavorites = async () => {
+  try {
+    const response = await axios.get(API, getAuthConfig());
 
+    console.log("Favorites API response:", response.data);
 
+    return response.data;
+  } catch (error) {
+    console.error(
+      "Get favorites failed:",
+      error.response?.data || error.message,
+    );
+    throw error;
+  }
+};
 
+export const removeFavorite = async (bookId) => {
+  try {
+    const response = await axios.delete(`${API}/${bookId}`, getAuthConfig());
 
-
-export const removeFavorite = (bookId) => {
-
-  return axios.delete(
-    `${API}/${bookId}`,
-    getAuthConfig()
-  );
-
+    return response.data;
+  } catch (error) {
+    console.error(
+      "Remove favorite failed:",
+      error.response?.data || error.message,
+    );
+    throw error;
+  }
 };
