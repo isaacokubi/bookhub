@@ -38,7 +38,7 @@ export const getOrders = async (req, res) => {
   }
 };
 
-export const getDashboardStats = async (req, res) => {
+export const getDashboard = async (req, res) => {
   try {
     const totalUsers = await User.countDocuments();
     const totalBooks = await Book.countDocuments();
