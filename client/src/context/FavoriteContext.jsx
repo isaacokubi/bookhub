@@ -1,4 +1,9 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
 
 import {
   getFavorites,
@@ -10,6 +15,7 @@ const FavoriteContext = createContext();
 
 export function FavoriteProvider({ children }) {
   const [favorites, setFavorites] = useState([]);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -21,41 +27,54 @@ export function FavoriteProvider({ children }) {
 
   const loadFavorites = async () => {
     try {
-      const res = await getFavorites();
+      setLoading(true);
 
-      console.log("Favorites API response:", res.data);
+      const favoritesData = await getFavorites();
 
-      setFavorites(res.data.map((item) => item.book));
+      console.log(
+        "Favorites API response:",
+        favoritesData
+      );
+
+      const books = Array.isArray(favoritesData)
+        ? favoritesData
+            .filter((item) => item?.book)
+            .map((item) => item.book)
+        : [];
+
+      setFavorites(books);
     } catch (error) {
       console.log(
         "Loading favorites failed:",
-        error.response?.data || error.message,
+        error.response?.data || error.message
       );
 
       setFavorites([]);
+    } finally {
+      setLoading(false);
     }
   };
 
   const addFavorite = async (book) => {
     try {
-      // FIX: send only the book ID
       await addFavoriteApi(book._id);
 
-      // Avoid duplicates
       setFavorites((prev) => {
-        const exists = prev.some((item) => item._id === book._id);
+        const exists = prev.some(
+          (item) => item._id === book._id
+        );
 
         if (exists) return prev;
 
         return [...prev, book];
       });
 
-      // Optional: refresh from backend
+      // Sync with backend
       await loadFavorites();
     } catch (error) {
       console.log(
         "Add favorite failed:",
-        error.response?.data || error.message,
+        error.response?.data || error.message
       );
     }
   };
@@ -64,17 +83,21 @@ export function FavoriteProvider({ children }) {
     try {
       await removeFavoriteApi(id);
 
-      setFavorites((prev) => prev.filter((book) => book._id !== id));
+      setFavorites((prev) =>
+        prev.filter((book) => book._id !== id)
+      );
     } catch (error) {
       console.log(
         "Remove favorite failed:",
-        error.response?.data || error.message,
+        error.response?.data || error.message
       );
     }
   };
 
   const isFavorite = (id) => {
-    return favorites.some((book) => book._id === id);
+    return favorites.some(
+      (book) => book._id === id
+    );
   };
 
   console.log("Favorites state:", favorites);
@@ -83,6 +106,7 @@ export function FavoriteProvider({ children }) {
     <FavoriteContext.Provider
       value={{
         favorites,
+        loading,
         addFavorite,
         removeFavorite,
         isFavorite,
@@ -94,4 +118,14 @@ export function FavoriteProvider({ children }) {
   );
 }
 
-export const useFavorite = () => useContext(FavoriteContext);
+export const useFavorite = () => {
+  const context = useContext(FavoriteContext);
+
+  if (!context) {
+    throw new Error(
+      "useFavorite must be used within a FavoriteProvider"
+    );
+  }
+
+  return context;
+};

@@ -33,11 +33,103 @@ export const createBook = async (req, res, next) => {
 
 export const getBooks = async (req, res) => {
   try {
-    const books = await Book.find()
+    const {
+      search,
 
-      .populate("seller", "name email")
+      category,
 
-      .populate("category", "name");
+      condition,
+
+      minPrice,
+
+      maxPrice,
+
+      sort,
+    } = req.query;
+
+    let filter = {};
+
+    // Search by title, author, ISBN
+
+    if (search) {
+      filter.$or = [
+        {
+          title: {
+            $regex: search,
+
+            $options: "i",
+          },
+        },
+
+        {
+          author: {
+            $regex: search,
+
+            $options: "i",
+          },
+        },
+
+        {
+          ISBN: {
+            $regex: search,
+
+            $options: "i",
+          },
+        },
+      ];
+    }
+
+    // Filter category
+
+    if (category) {
+      filter.category = category;
+    }
+
+    // Filter condition
+
+    if (condition) {
+      filter.condition = condition;
+    }
+
+    // Filter price range
+
+    if (minPrice || maxPrice) {
+      filter.price = {
+        $gte: minPrice || 0,
+
+        $lte: maxPrice || 999999,
+      };
+    }
+
+    let booksQuery = Book.find(filter)
+
+      .populate(
+        "category",
+
+        "name",
+      )
+
+      .populate(
+        "seller",
+
+        "name email",
+      );
+
+    // Sorting
+
+    if (sort === "lowest") {
+      booksQuery = booksQuery.sort("price");
+    }
+
+    if (sort === "highest") {
+      booksQuery = booksQuery.sort("-price");
+    }
+
+    if (sort === "newest") {
+      booksQuery = booksQuery.sort("-createdAt");
+    }
+
+    const books = await booksQuery;
 
     res.json(books);
   } catch (error) {
@@ -53,15 +145,29 @@ export const getBook = async (req, res) => {
   try {
     const book = await Book.findById(req.params.id)
 
-      .populate("seller", "name email")
+      .populate(
+        "category",
 
-      .populate("category", "name");
+        "name",
+      )
+
+      .populate(
+        "seller",
+
+        "name email",
+      );
 
     if (!book) {
       return res.status(404).json({
         message: "Book not found",
       });
     }
+
+    // Increase views
+
+    book.views = (book.views || 0) + 1;
+
+    await book.save();
 
     res.json(book);
   } catch (error) {
@@ -79,7 +185,11 @@ export const sellerBooks = async (req, res) => {
       seller: req.user._id,
     })
 
-      .populate("category", "name");
+      .populate(
+        "category",
+
+        "name",
+      );
 
     res.json(books);
   } catch (error) {
@@ -107,7 +217,11 @@ export const updateBook = async (req, res) => {
       });
     }
 
-    Object.assign(book, req.body);
+    Object.assign(
+      book,
+
+      req.body,
+    );
 
     await book.save();
 
@@ -140,7 +254,7 @@ export const deleteBook = async (req, res) => {
     await book.deleteOne();
 
     res.json({
-      message: "Deleted",
+      message: "Deleted successfully",
     });
   } catch (error) {
     res.status(500).json({
