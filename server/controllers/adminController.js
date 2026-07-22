@@ -43,15 +43,19 @@ export const getOrders = async (req, res) => {
 
 export const getDashboard = async (req, res) => {
   try {
-    const totalUsers = await User.countDocuments();
-    const totalBooks = await Book.countDocuments();
-    const totalOrders = await Order.countDocuments();
+    const users = await User.countDocuments();
+    const books = await Book.countDocuments();
+    const orders = await Order.countDocuments();
+
+    const sellers = await User.countDocuments({
+      role: "seller",
+    });
 
     res.status(200).json({
-      users: totalUsers,
-      books: totalBooks,
-      orders: totalOrders,
-      sellers: await User.countDocuments({ role: "seller" }),
+      users,
+      books,
+      orders,
+      sellers,
     });
   } catch (error) {
     res.status(500).json({
