@@ -14,6 +14,8 @@ export default function AdminUsers() {
     try {
       const data = await getUsers();
 
+      console.log("ADMIN USERS RESPONSE:", data);
+
       setUsers(data);
     } catch (error) {
       console.error("Failed to load users:", error);
