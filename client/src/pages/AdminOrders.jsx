@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { getOrders } from "../api/adminApi";
+
+import { getOrders, updateOrderStatus } from "../api/adminApi";
 
 export default function AdminOrders() {
   const [orders, setOrders] = useState([]);
@@ -19,6 +20,29 @@ export default function AdminOrders() {
       console.log("Failed to load orders:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // =======================
+  // CHANGE ORDER STATUS
+  // =======================
+
+  const changeStatus = async (id, status) => {
+    try {
+      await updateOrderStatus(id, status);
+
+      setOrders(
+        orders.map((order) =>
+          order._id === id
+            ? {
+                ...order,
+                status,
+              }
+            : order,
+        ),
+      );
+    } catch (error) {
+      console.log("Failed to update status:", error);
     }
   };
 
@@ -60,7 +84,25 @@ export default function AdminOrders() {
 
                   <td className="p-3">KES {order.total}</td>
 
-                  <td className="p-3 capitalize">{order.status}</td>
+                  <td className="p-3">
+                    <select
+                      value={order.status}
+                      onChange={(e) => changeStatus(order._id, e.target.value)}
+                      className="
+                          border
+                          rounded
+                          p-2
+                          "
+                    >
+                      <option value="Pending">Pending</option>
+
+                      <option value="Processing">Processing</option>
+
+                      <option value="Completed">Completed</option>
+
+                      <option value="Cancelled">Cancelled</option>
+                    </select>
+                  </td>
 
                   <td className="p-3">
                     {order.createdAt
@@ -71,7 +113,14 @@ export default function AdminOrders() {
               ))
             ) : (
               <tr>
-                <td colSpan="5" className="p-6 text-center text-gray-500">
+                <td
+                  colSpan="5"
+                  className="
+                    p-6
+                    text-center
+                    text-gray-500
+                    "
+                >
                   No orders found
                 </td>
               </tr>
