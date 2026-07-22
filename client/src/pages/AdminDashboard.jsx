@@ -1,118 +1,196 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import { getDashboardStats } from "../api/adminApi";
+
+import {
+  getDashboardStats,
+  getUsers,
+  getAdminBooks,
+  getOrders,
+  getSellers,
+  deleteUser,
+  deleteBook,
+  updateOrderStatus,
+} from "../api/adminApi";
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState({
-    totalUsers: 0,
-    totalBooks: 0,
-    totalOrders: 0,
+    users: 0,
+    books: 0,
+    orders: 0,
+    sellers: 0,
   });
+
+  const [users, setUsers] = useState([]);
+
+  const [books, setBooks] = useState([]);
+
+  const [orders, setOrders] = useState([]);
+
+  const [sellers, setSellers] = useState([]);
 
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const loadDashboard = async () => {
+      try {
+        const dashboard = await getDashboardStats();
+
+        setStats(dashboard);
+
+        const usersData = await getUsers();
+
+        setUsers(usersData);
+
+        const booksData = await getAdminBooks();
+
+        setBooks(booksData);
+
+        const ordersData = await getOrders();
+
+        setOrders(ordersData);
+
+        const sellersData = await getSellers();
+
+        setSellers(sellersData);
+      } catch (error) {
+        console.log(error.response?.data || error.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     loadDashboard();
   }, []);
 
-  const loadDashboard = async () => {
-    try {
-      const data = await getDashboardStats();
+  const removeUser = async (id) => {
+    await deleteUser(id);
 
-      console.log("Dashboard stats:", data);
-
-      setStats({
-        totalUsers: data.totalUsers || 0,
-        totalBooks: data.totalBooks || 0,
-        totalOrders: data.totalOrders || 0,
-      });
-    } catch (error) {
-      console.error("Dashboard loading failed:", error);
-    } finally {
-      setLoading(false);
-    }
+    setUsers(users.filter((user) => user._id !== id));
   };
 
-  if (loading) {
-    return (
-      <div className="p-8 flex items-center justify-center min-h-[300px]">
-        <h1 className="text-2xl font-bold text-gray-700">
-          Loading Dashboard...
-        </h1>
-      </div>
+  const removeBook = async (id) => {
+    await deleteBook(id);
+
+    setBooks(books.filter((book) => book._id !== id));
+  };
+
+  const changeOrderStatus = async (id, status) => {
+    await updateOrderStatus(id, status);
+
+    setOrders(
+      orders.map((order) =>
+        order._id === id
+          ? {
+              ...order,
+              status,
+            }
+          : order,
+      ),
     );
-  }
+  };
+
+  if (loading) return <h2>Loading...</h2>;
 
   return (
-    <div className="p-8 bg-gray-100 min-h-screen">
-      <h1 className="text-4xl font-bold mb-8 text-gray-800">
-        Admin Dashboard
-      </h1>
+    <div className="p-6">
+      <h1 className="text-3xl font-bold mb-6">Admin Dashboard</h1>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Users */}
-        <div className="bg-white p-6 rounded-xl shadow hover:shadow-lg transition">
-          <h3 className="text-gray-500 text-sm uppercase font-semibold">
-            Total Users
-          </h3>
-
-          <p className="text-4xl font-bold text-blue-600 mt-2">
-            {stats.totalUsers}
-          </p>
+      <div className="grid md:grid-cols-4 gap-4">
+        <div className="border p-5 rounded shadow">
+          Users
+          <h2>{stats.users}</h2>
         </div>
 
-        {/* Books */}
-        <div className="bg-white p-6 rounded-xl shadow hover:shadow-lg transition">
-          <h3 className="text-gray-500 text-sm uppercase font-semibold">
-            Total Books
-          </h3>
-
-          <p className="text-4xl font-bold text-green-600 mt-2">
-            {stats.totalBooks}
-          </p>
+        <div className="border p-5 rounded shadow">
+          Books
+          <h2>{stats.books}</h2>
         </div>
 
-        {/* Orders */}
-        <div className="bg-white p-6 rounded-xl shadow hover:shadow-lg transition">
-          <h3 className="text-gray-500 text-sm uppercase font-semibold">
-            Total Orders
-          </h3>
+        <div className="border p-5 rounded shadow">
+          Orders
+          <h2>{stats.orders}</h2>
+        </div>
 
-          <p className="text-4xl font-bold text-purple-600 mt-2">
-            {stats.totalOrders}
-          </p>
+        <div className="border p-5 rounded shadow">
+          Sellers
+          <h2>{stats.sellers}</h2>
         </div>
       </div>
 
-      {/* Quick Actions */}
-      <div className="mt-10">
-        <h2 className="text-xl font-semibold mb-4 text-gray-700">
-          Quick Actions
-        </h2>
+      <hr className="my-8" />
 
-        <div className="flex flex-wrap gap-4">
-          <Link
-            to="/admin/books"
-            className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition"
-          >
-            Manage Books
-          </Link>
+      <h2 className="text-2xl font-bold">Manage Users</h2>
 
-          <Link
-            to="/admin/orders"
-            className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition"
-          >
-            Manage Orders
-          </Link>
+      {users.map((user) => (
+        <div key={user._id} className="border p-3 my-2 flex justify-between">
+          <div>
+            {user.name}
+            <br />
 
-          <Link
-            to="/admin/users"
-            className="bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition"
+            {user.email}
+          </div>
+
+          <button
+            onClick={() => removeUser(user._id)}
+            className="bg-red-500 text-white px-3 py-1 rounded"
           >
-            Manage Users
-          </Link>
+            Delete
+          </button>
         </div>
-      </div>
+      ))}
+
+      <h2 className="text-2xl font-bold mt-8">Manage Books</h2>
+
+      {books.map((book) => (
+        <div key={book._id} className="border p-3 my-2 flex justify-between">
+          {book.title}
+
+          <button
+            onClick={() => removeBook(book._id)}
+            className="bg-red-500 text-white px-3 py-1 rounded"
+          >
+            Delete
+          </button>
+        </div>
+      ))}
+
+      <h2 className="text-2xl font-bold mt-8">Manage Orders</h2>
+
+      {orders.map((order) => (
+        <div key={order._id} className="border p-3 my-2">
+          <p>
+            Order ID:
+            {order._id}
+          </p>
+
+          <p>
+            Status:
+            {order.status}
+          </p>
+
+          <select
+            value={order.status}
+            onChange={(e) => changeOrderStatus(order._id, e.target.value)}
+          >
+            <option>pending</option>
+
+            <option>paid</option>
+
+            <option>shipped</option>
+
+            <option>completed</option>
+
+            <option>cancelled</option>
+          </select>
+        </div>
+      ))}
+
+      <h2 className="text-2xl font-bold mt-8">Manage Sellers</h2>
+
+      {sellers.map((seller) => (
+        <div key={seller._id} className="border p-3 my-2">
+          {seller.name}
+        </div>
+      ))}
     </div>
   );
 }

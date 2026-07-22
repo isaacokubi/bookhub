@@ -1,3 +1,5 @@
+// server/routes/adminRoutes.js
+
 import express from "express";
 
 import {
@@ -5,24 +7,90 @@ import {
   getUsers,
   getBooks,
   getOrders,
+  deleteUser,
+  deleteBook,
+  updateOrderStatus,
+  getSellers,
 } from "../controllers/adminController.js";
 
-import authMiddleware from "../middleware/authMiddleware.js";
+import protect from "../middleware/authMiddleware.js";
+import adminOnly from "../middleware/adminMiddleware.js";
 
-import { adminMiddleware } from "../middleware/adminMiddleware.js";
 
 const router = express.Router();
 
-router.use(authMiddleware);
 
-router.use(adminMiddleware);
+// Apply authentication and admin authorization
+router.use(protect);
+router.use(adminOnly);
 
-router.get("/dashboard", getDashboard);
 
-router.get("/users", getUsers);
+// =======================
+// DASHBOARD
+// =======================
 
-router.get("/books", getBooks);
+router.get(
+  "/dashboard",
+  getDashboard
+);
 
-router.get("/orders", getOrders);
+
+// =======================
+// USERS MANAGEMENT
+// =======================
+
+router.get(
+  "/users",
+  getUsers
+);
+
+
+router.delete(
+  "/users/:id",
+  deleteUser
+);
+
+
+// =======================
+// BOOK MANAGEMENT
+// =======================
+
+router.get(
+  "/books",
+  getBooks
+);
+
+
+router.delete(
+  "/books/:id",
+  deleteBook
+);
+
+
+// =======================
+// ORDER MANAGEMENT
+// =======================
+
+router.get(
+  "/orders",
+  getOrders
+);
+
+
+router.put(
+  "/orders/:id",
+  updateOrderStatus
+);
+
+
+// =======================
+// SELLER MANAGEMENT
+// =======================
+
+router.get(
+  "/sellers",
+  getSellers
+);
+
 
 export default router;

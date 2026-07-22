@@ -63,3 +63,90 @@ export const getDashboard = async (req, res) => {
     });
   }
 };
+
+// Delete user
+export const deleteUser = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+
+    if (!user) {
+      return res.status(404).json({
+        message: "User not found",
+      });
+    }
+
+    await user.deleteOne();
+
+    res.json({
+      message: "User deleted successfully",
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: error.message,
+    });
+  }
+};
+
+// Delete book
+export const deleteBook = async (req, res) => {
+  try {
+    const book = await Book.findById(req.params.id);
+
+    if (!book) {
+      return res.status(404).json({
+        message: "Book not found",
+      });
+    }
+
+    await book.deleteOne();
+
+    res.json({
+      message: "Book deleted successfully",
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: error.message,
+    });
+  }
+};
+
+// Update order status
+export const updateOrderStatus = async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+
+    if (!order) {
+      return res.status(404).json({
+        message: "Order not found",
+      });
+    }
+
+    order.status = req.body.status;
+
+    await order.save();
+
+    res.json({
+      message: "Order status updated",
+      order,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: error.message,
+    });
+  }
+};
+
+// Get sellers
+export const getSellers = async (req, res) => {
+  try {
+    const sellers = await User.find({
+      role: "seller",
+    }).select("-password");
+
+    res.json(sellers);
+  } catch (error) {
+    res.status(500).json({
+      message: error.message,
+    });
+  }
+};

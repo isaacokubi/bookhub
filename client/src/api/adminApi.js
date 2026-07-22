@@ -1,45 +1,117 @@
 import axios from "axios";
 
-const API = "https://bookhub-1-d9b3.onrender.com/api/admin";
+const API = `${import.meta.env.VITE_API_URL}/admin`;
 
-const getToken = () => localStorage.getItem("token");
+// Get authentication token
+const getAuthConfig = () => {
+  const token = localStorage.getItem("token");
+
+  return {
+    headers: {
+      Authorization: token ? `Bearer ${token}` : "",
+    },
+  };
+};
+
+// =======================
+// ADMIN DASHBOARD
+// =======================
 
 export const getDashboardStats = async () => {
-  const response = await axios.get(`${API}/dashboard`, {
-    headers: {
-      Authorization: `Bearer ${getToken()}`,
-    },
-  });
+  try {
+    const response = await axios.get(`${API}/dashboard`, getAuthConfig());
 
-  return response.data;
+    console.log("Dashboard API response:", response.data);
+
+    return response.data;
+  } catch (error) {
+    console.error(
+      "Dashboard API error:",
+      error.response?.data || error.message,
+    );
+
+    throw error;
+  }
 };
+
+// =======================
+// USERS
+// =======================
 
 export const getUsers = async () => {
-  const response = await axios.get(`${API}/users`, {
-    headers: {
-      Authorization: `Bearer ${getToken()}`,
-    },
-  });
+  try {
+    const response = await axios.get(`${API}/users`, getAuthConfig());
+
+    console.log("Users API response:", response.data);
+
+    return response.data;
+  } catch (error) {
+    console.error("Users API error:", error.response?.data || error.message);
+
+    throw error;
+  }
+};
+
+export const deleteUser = async (id) => {
+  const response = await axios.delete(`${API}/users/${id}`, getAuthConfig());
 
   return response.data;
 };
 
+// =======================
+// BOOKS
+// =======================
 export const getBooks = async () => {
-  const response = await axios.get(`${API}/books`, {
-    headers: {
-      Authorization: `Bearer ${getToken()}`,
-    },
-  });
+  const response = await axios.get(`${API}/books`, getAuthConfig());
 
   return response.data;
 };
+
+// Alias for admin pages
+export const getAdminBooks = getBooks;
+
+export const deleteBook = async (id) => {
+  const response = await axios.delete(`${API}/books/${id}`, getAuthConfig());
+
+  return response.data;
+};
+
+// =======================
+// ORDERS
+// =======================
 
 export const getOrders = async () => {
-  const response = await axios.get(`${API}/orders`, {
-    headers: {
-      Authorization: `Bearer ${getToken()}`,
+  try {
+    const response = await axios.get(`${API}/orders`, getAuthConfig());
+
+    console.log("Orders API response:", response.data);
+
+    return response.data;
+  } catch (error) {
+    console.error("Orders API error:", error.response?.data || error.message);
+
+    throw error;
+  }
+};
+
+export const updateOrderStatus = async (id, status) => {
+  const response = await axios.put(
+    `${API}/orders/${id}`,
+    {
+      status,
     },
-  });
+    getAuthConfig(),
+  );
+
+  return response.data;
+};
+
+// =======================
+// SELLERS
+// =======================
+
+export const getSellers = async () => {
+  const response = await axios.get(`${API}/sellers`, getAuthConfig());
 
   return response.data;
 };
