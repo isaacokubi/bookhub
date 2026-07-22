@@ -28,7 +28,10 @@ export const getBooks = async (req, res) => {
 
 export const getOrders = async (req, res) => {
   try {
-    const orders = await Order.find().populate("buyer", "name email");
+    const orders = await Order.find()
+      .populate("user", "name email")
+      .populate("books.book", "title")
+      .populate("books.seller", "name email");
 
     res.json(orders);
   } catch (error) {
@@ -45,9 +48,10 @@ export const getDashboard = async (req, res) => {
     const totalOrders = await Order.countDocuments();
 
     res.status(200).json({
-      totalUsers,
-      totalBooks,
-      totalOrders,
+      users: totalUsers,
+      books: totalBooks,
+      orders: totalOrders,
+      sellers: await User.countDocuments({ role: "seller" }),
     });
   } catch (error) {
     res.status(500).json({
