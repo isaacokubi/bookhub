@@ -94,7 +94,7 @@ export default function AdminOrders() {
                           p-2
                           "
                     >
-                      <option value="Pending">Pending</option>
+  
 
                       <option value="Processing">Processing</option>
 
