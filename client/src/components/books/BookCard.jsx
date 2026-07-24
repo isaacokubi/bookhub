@@ -8,28 +8,39 @@ export default function BookCard({ book }) {
 
   const navigate = useNavigate();
 
-  const isInCart = cart.some((item) => item._id === book._id);
+  // Check if current book already exists in cart
+  const isInCart = cart?.books?.some((item) => item.book?._id === book._id);
 
-  const handleAddToCart = () => {
+  // Add to cart
+  const handleAddToCart = async () => {
     if (isInCart) {
       toast.info(`${book.title} is already in your cart 🛒`);
 
       return;
     }
 
-    addToCart(book);
+    try {
+      await addToCart(book._id);
 
-    toast.success(`${book.title} added to cart 🛒`);
+      toast.success(`${book.title} added to cart 🛒`);
+    } catch (error) {
+      toast.error("Failed to add book to cart");
+    }
   };
 
-  const handleBuyNow = () => {
-    if (!isInCart) {
-      addToCart(book);
+  // Buy now
+  const handleBuyNow = async () => {
+    try {
+      if (!isInCart) {
+        await addToCart(book._id);
+      }
+
+      toast.success("Book added. Proceeding to checkout 💳");
+
+      navigate("/checkout");
+    } catch (error) {
+      toast.error("Unable to proceed to checkout");
     }
-
-    toast.success("Book added. Proceeding to checkout 💳");
-
-    navigate("/checkout");
   };
 
   return (
@@ -127,20 +138,14 @@ export default function BookCard({ book }) {
 
         <button
           onClick={handleAddToCart}
-          disabled={isInCart}
-          className={`
+          className="
           px-4
           py-2
           rounded
           text-white
-
-          ${
-            isInCart
-              ? "bg-gray-400 cursor-not-allowed"
-              : "bg-blue-600 hover:bg-blue-700"
-          }
-
-          `}
+          bg-blue-600
+          hover:bg-blue-700
+          "
         >
           {isInCart ? "Added ✓" : "Add To Cart 🛒"}
         </button>

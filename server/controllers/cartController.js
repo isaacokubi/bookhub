@@ -16,6 +16,7 @@ export const getCart = async (req, res) => {
       },
     });
 
+    // Create empty cart if user has none
     if (!cart) {
       cart = await Cart.create({
         user: req.user._id,
@@ -53,7 +54,7 @@ export const addToCart = async (req, res) => {
       user: req.user._id,
     });
 
-    // Create new cart
+    // Create cart if user has no cart
     if (!cart) {
       cart = await Cart.create({
         user: req.user._id,
@@ -66,14 +67,16 @@ export const addToCart = async (req, res) => {
         ],
       });
     } else {
+      // Check if book already exists
       const existingBook = cart.books.find(
-        (item) => item.book.toString() === bookId,
+        (item) => item.book && item.book.toString() === bookId,
       );
 
-      // Increase quantity if book already exists
       if (existingBook) {
+        // Increase quantity
         existingBook.quantity += 1;
       } else {
+        // Add new book
         cart.books.push({
           book: bookId,
           quantity: 1,
@@ -85,7 +88,14 @@ export const addToCart = async (req, res) => {
 
     await cart.populate({
       path: "books.book",
+
       select: "title author price images condition seller",
+
+      populate: {
+        path: "seller",
+
+        select: "name email",
+      },
     });
 
     res.status(200).json(cart);
@@ -119,7 +129,11 @@ export const removeFromCart = async (req, res) => {
 
     await cart.save();
 
-    await cart.populate("books.book");
+    await cart.populate({
+      path: "books.book",
+
+      select: "title author price images condition seller",
+    });
 
     res.status(200).json(cart);
   } catch (error) {
