@@ -1,34 +1,42 @@
 import Cart from "../models/Cart.js";
 
+
 // ==============================
 // GET USER CART
 // ==============================
 export const getCart = async (req, res) => {
   try {
+
     let cart = await Cart.findOne({
       user: req.user._id,
-    }).populate("books");
+    }).populate("books.book");
 
-    // Create empty cart if user has none
+
+    // Create empty cart if it does not exist
     if (!cart) {
+
       cart = await Cart.create({
         user: req.user._id,
         books: [],
       });
+
     }
 
-    await cart.populate("books");
 
     res.status(200).json(cart);
 
+
   } catch (error) {
+
     console.log("GET CART ERROR:", error);
 
     res.status(500).json({
       message: error.message,
     });
+
   }
 };
+
 
 
 // ==============================
@@ -40,13 +48,16 @@ export const addToCart = async (req, res) => {
     console.log("BODY:", req.body);
     console.log("USER:", req.user);
 
+
     const { bookId } = req.body;
 
 
     if (!bookId) {
+
       return res.status(400).json({
         message: "Book ID is required",
       });
+
     }
 
 
@@ -55,37 +66,63 @@ export const addToCart = async (req, res) => {
     });
 
 
-    // Create cart if user does not have one
+
+    // Create new cart
     if (!cart) {
 
       cart = await Cart.create({
+
         user: req.user._id,
-        books: [bookId],
+
+        books: [
+          {
+            book: bookId,
+            quantity: 1,
+          }
+        ],
+
       });
 
 
     } else {
 
 
-      // Prevent duplicate books
-      const exists = cart.books.some(
-        (id) => id.toString() === bookId
+      const existingBook = cart.books.find(
+        (item) =>
+          item.book.toString() === bookId
       );
 
 
-      if (!exists) {
-        cart.books.push(bookId);
+      // Increase quantity if book already exists
+      if (existingBook) {
+
+        existingBook.quantity += 1;
+
+
+      } else {
+
+
+        cart.books.push({
+
+          book: bookId,
+          quantity: 1,
+
+        });
+
       }
 
 
       await cart.save();
+
     }
 
 
-    await cart.populate("books");
+
+    await cart.populate("books.book");
 
 
     res.status(200).json(cart);
+
 
 
   } catch (error) {
@@ -116,25 +153,32 @@ export const removeFromCart = async (req, res) => {
     });
 
 
+
     if (!cart) {
+
       return res.status(404).json({
         message: "Cart not found",
       });
+
     }
 
 
+
     cart.books = cart.books.filter(
-      (id) => id.toString() !== bookId
+      (item) =>
+        item.book.toString() !== bookId
     );
+
 
 
     await cart.save();
 
 
-    await cart.populate("books");
+    await cart.populate("books.book");
 
 
     res.status(200).json(cart);
+
 
 
   } catch (error) {
