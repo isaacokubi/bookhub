@@ -1,6 +1,7 @@
 import Book from "../models/Book.js";
 
 // CREATE BOOK
+
 export const createBook = async (req, res) => {
   try {
     const book = await Book.create({
@@ -10,11 +11,13 @@ export const createBook = async (req, res) => {
 
       description: req.body.description,
 
-      price: req.body.price,
+      price: Number(req.body.price),
 
       category: req.body.category,
 
-      image: req.file ? req.file.path : "",
+      condition: req.body.condition,
+
+      images: req.file ? [req.file.path] : [],
 
       seller: req.user._id,
     });
@@ -25,6 +28,8 @@ export const createBook = async (req, res) => {
       book,
     });
   } catch (error) {
+    console.log(error);
+
     res.status(500).json({
       message: error.message,
     });
@@ -32,11 +37,12 @@ export const createBook = async (req, res) => {
 };
 
 // GET SELLER BOOKS
+
 export const getSellerBooks = async (req, res) => {
   try {
     const books = await Book.find({
       seller: req.user._id,
-    });
+    }).populate("category");
 
     res.json(books);
   } catch (error) {
@@ -47,6 +53,7 @@ export const getSellerBooks = async (req, res) => {
 };
 
 // UPDATE BOOK
+
 export const updateBook = async (req, res) => {
   try {
     const book = await Book.findByIdAndUpdate(
@@ -68,6 +75,7 @@ export const updateBook = async (req, res) => {
 };
 
 // DELETE BOOK
+
 export const deleteBook = async (req, res) => {
   try {
     await Book.findByIdAndDelete(req.params.id);

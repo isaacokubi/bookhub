@@ -1,6 +1,6 @@
 import express from "express";
 
-// Seller book controllers
+// Controllers
 import {
   createBook,
   getSellerBooks,
@@ -8,46 +8,87 @@ import {
   deleteBook,
 } from "../controllers/sellerController.js";
 
-// Seller order controller
 import { getSellerOrders } from "../controllers/sellerOrderController.js";
 
 // Middleware
 import auth from "../middleware/auth.js";
-
 import sellerOnly from "../middleware/sellerMiddleware.js";
-
 import upload from "../middleware/upload.js";
 
 const router = express.Router();
 
-// ==========================
+// =================================
 // CREATE BOOK LISTING
-// ==========================
+// =================================
 
-router.post("/books", auth, sellerOnly, upload.single("image"), createBook);
+router.post(
+  "/books",
 
-// ==========================
+  auth,
+
+  sellerOnly,
+
+  upload.single("image"),
+
+  createBook,
+);
+
+// =================================
 // GET SELLER BOOKS
-// ==========================
+// =================================
 
-router.get("/books", auth, sellerOnly, getSellerBooks);
+router.get(
+  "/books",
 
-// ==========================
+  auth,
+
+  sellerOnly,
+
+  getSellerBooks,
+);
+
+// =================================
 // UPDATE BOOK
-// ==========================
+// =================================
 
-router.put("/books/:id", auth, sellerOnly, updateBook);
+router.put(
+  "/books/:id",
 
-// ==========================
+  auth,
+
+  sellerOnly,
+
+  upload.single("image"),
+
+  updateBook,
+);
+
+// =================================
 // DELETE BOOK
-// ==========================
+// =================================
 
-router.delete("/books/:id", auth, sellerOnly, deleteBook);
+router.delete(
+  "/books/:id",
 
-// ==========================
-// GET SELLER ORDERS
-// ==========================
+  auth,
 
-router.get("/orders", auth, sellerOnly, getSellerOrders);
+  sellerOnly,
+
+  deleteBook,
+);
+
+// =================================
+// SELLER ORDERS
+// =================================
+
+router.get(
+  "/orders",
+
+  auth,
+
+  sellerOnly,
+
+  getSellerOrders,
+);
 
 export default router;

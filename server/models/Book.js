@@ -1,98 +1,176 @@
 import mongoose from "mongoose";
 
+
 const bookSchema = new mongoose.Schema(
-  {
-    title: {
-      type: String,
 
-      required: true,
+{
 
-      trim: true,
-    },
+title:{
 
-    author: {
-      type: String,
+type:String,
 
-      required: true,
-    },
+required:true,
 
-    ISBN: String,
+trim:true
 
-    description: String,
+},
 
-    price: {
-      type: Number,
 
-      required: true,
-    },
+author:{
 
-    condition: {
-      type: String,
+type:String,
 
-      enum: ["New", "Like New", "Used"],
+required:true
 
-      default: "Used",
-    },
+},
 
-    category: {
-      type: mongoose.Schema.Types.ObjectId,
 
-      ref: "Category",
-    },
+ISBN:String,
 
-    language: {
-      type: String,
 
-      default: "English",
-    },
+description:String,
 
-    quantity: {
-      type: Number,
 
-      default: 1,
-    },
 
-    location: String,
+price:{
 
-    deliveryOptions: [String],
+type:Number,
 
-    images: [String],
+required:true
 
-    seller: {
-      type: mongoose.Schema.Types.ObjectId,
+},
 
-      ref: "User",
 
-      required: true,
-    },
 
-    status: {
-      type: String,
+condition:{
 
-      enum: ["pending", "approved", "rejected"],
+type:String,
 
-      default: "pending",
-    },
+enum:[
+"New",
+"Like New",
+"Used"
+],
 
-    views: {
-      type: Number,
+default:"Used"
 
-      default: 0,
-    },
-    seller: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      required: true,
-    },
-  },
+},
 
-  {
-    timestamps: true,
-  },
+
+
+
+category:{
+
+type:mongoose.Schema.Types.ObjectId,
+
+ref:"Category",
+
+required:true
+
+},
+
+
+
+
+
+language:{
+
+type:String,
+
+default:"English"
+
+},
+
+
+
+
+quantity:{
+
+type:Number,
+
+default:1
+
+},
+
+
+
+
+location:String,
+
+
+
+
+deliveryOptions:[String],
+
+
+
+
+
+images:[String],
+
+
+
+
+
+seller:{
+
+type:mongoose.Schema.Types.ObjectId,
+
+ref:"User",
+
+required:true
+
+},
+
+
+
+
+status:{
+
+type:String,
+
+enum:[
+"pending",
+"approved",
+"rejected"
+],
+
+default:"pending"
+
+},
+
+
+
+
+
+views:{
+
+type:Number,
+
+default:0
+
+}
+
+
+
+},
+
+
+{
+
+timestamps:true
+
+}
+
+
 );
 
-export default mongoose.model(
-  "Book",
 
-  bookSchema,
+
+export default mongoose.model(
+
+"Book",
+
+bookSchema
+
 );
