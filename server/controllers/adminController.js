@@ -2,31 +2,21 @@ import User from "../models/User.js";
 import Book from "../models/Book.js";
 import Order from "../models/Order.js";
 
-
 // =======================
 // GET USERS
 // =======================
 
 export const getUsers = async (req, res) => {
   try {
-
-    const users = await User.find()
-      .select("-password");
-
+    const users = await User.find().select("-password");
 
     res.json(users);
-
-
   } catch (error) {
-
     res.status(500).json({
       message: error.message,
     });
-
   }
 };
-
-
 
 // =======================
 // GET BOOKS
@@ -34,24 +24,15 @@ export const getUsers = async (req, res) => {
 
 export const getBooks = async (req, res) => {
   try {
-
-    const books = await Book.find()
-      .populate("seller", "name email");
-
+    const books = await Book.find().populate("seller", "name email");
 
     res.json(books);
-
-
   } catch (error) {
-
     res.status(500).json({
       message: error.message,
     });
-
   }
 };
-
-
 
 // =======================
 // GET ORDERS
@@ -59,26 +40,18 @@ export const getBooks = async (req, res) => {
 
 export const getOrders = async (req, res) => {
   try {
-
     const orders = await Order.find()
       .populate("user", "name email")
       .populate("books.book", "title")
       .populate("books.seller", "name email");
 
-
     res.json(orders);
-
-
   } catch (error) {
-
     res.status(500).json({
       message: error.message,
     });
-
   }
 };
-
-
 
 // =======================
 // DASHBOARD STATS
@@ -86,18 +59,15 @@ export const getOrders = async (req, res) => {
 
 export const getDashboard = async (req, res) => {
   try {
-
     const users = await User.countDocuments();
 
     const books = await Book.countDocuments();
 
     const orders = await Order.countDocuments();
 
-
     const sellers = await User.countDocuments({
       role: "seller",
     });
-
 
     res.status(200).json({
       users,
@@ -105,18 +75,12 @@ export const getDashboard = async (req, res) => {
       orders,
       sellers,
     });
-
-
   } catch (error) {
-
     res.status(500).json({
       message: error.message,
     });
-
   }
 };
-
-
 
 // =======================
 // DELETE USER
@@ -124,37 +88,25 @@ export const getDashboard = async (req, res) => {
 
 export const deleteUser = async (req, res) => {
   try {
-
     const user = await User.findById(req.params.id);
 
-
     if (!user) {
-
       return res.status(404).json({
         message: "User not found",
       });
-
     }
 
-
     await user.deleteOne();
-
 
     res.json({
       message: "User deleted successfully",
     });
-
-
   } catch (error) {
-
     res.status(500).json({
       message: error.message,
     });
-
   }
 };
-
-
 
 // =======================
 // DELETE BOOK
@@ -162,81 +114,66 @@ export const deleteUser = async (req, res) => {
 
 export const deleteBook = async (req, res) => {
   try {
-
     const book = await Book.findById(req.params.id);
 
-
     if (!book) {
-
       return res.status(404).json({
         message: "Book not found",
       });
-
     }
 
-
     await book.deleteOne();
-
 
     res.json({
       message: "Book deleted successfully",
     });
-
-
   } catch (error) {
-
     res.status(500).json({
       message: error.message,
     });
-
   }
 };
-
-
 
 // =======================
 // UPDATE ORDER STATUS
 // =======================
 
 export const updateOrderStatus = async (req, res) => {
-
   try {
+    const { status } = req.body;
+
+    const allowedStatuses = ["Processing", "Completed", "Cancelled"];
+
+    if (!allowedStatuses.includes(status)) {
+      return res.status(400).json({
+        message: "Invalid order status",
+      });
+    }
 
     const order = await Order.findById(req.params.id);
 
-
     if (!order) {
-
       return res.status(404).json({
         message: "Order not found",
       });
-
     }
 
-
-    order.status = req.body.status;
-
+    order.status = status;
 
     await order.save();
 
-
-    res.json({
-      message: "Order status updated",
+    res.status(200).json({
+      message: "Order status updated successfully",
       order,
     });
-
-
   } catch (error) {
+    console.error("Update order status error:", error);
 
     res.status(500).json({
       message: error.message,
     });
-
   }
-
 };
-
-
 
 // =======================
 // GET SELLERS
@@ -244,25 +181,17 @@ export const updateOrderStatus = async (req, res) => {
 
 export const getSellers = async (req, res) => {
   try {
-
     const sellers = await User.find({
       role: "seller",
     }).select("-password");
 
-
     res.json(sellers);
-
-
   } catch (error) {
-
     res.status(500).json({
       message: error.message,
     });
-
   }
 };
-
-
 
 // =======================
 // DELETE SELLER
@@ -270,41 +199,28 @@ export const getSellers = async (req, res) => {
 
 export const deleteSeller = async (req, res) => {
   try {
-
     const seller = await User.findById(req.params.id);
 
-
     if (!seller) {
-
       return res.status(404).json({
         message: "Seller not found",
       });
-
     }
 
-
     if (seller.role !== "seller") {
-
       return res.status(400).json({
         message: "User is not a seller",
       });
-
     }
 
-
     await seller.deleteOne();
-
 
     res.json({
       message: "Seller deleted successfully",
     });
-
-
   } catch (error) {
-
     res.status(500).json({
       message: error.message,
     });
-
   }
 };

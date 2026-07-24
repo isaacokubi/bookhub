@@ -15,7 +15,20 @@ export default function AdminOrders() {
     try {
       const data = await getOrders();
 
-      setOrders(data);
+      const updatedOrders = data.map((order) => ({
+        ...order,
+
+        status:
+          order.status === "completed"
+            ? "Completed"
+            : order.status === "cancelled"
+              ? "Cancelled"
+              : order.status === "processing"
+                ? "Processing"
+                : order.status,
+      }));
+
+      setOrders(updatedOrders);
     } catch (error) {
       console.log("Failed to load orders:", error);
     } finally {
@@ -94,8 +107,6 @@ export default function AdminOrders() {
                           p-2
                           "
                     >
-  
-
                       <option value="Processing">Processing</option>
 
                       <option value="Completed">Completed</option>

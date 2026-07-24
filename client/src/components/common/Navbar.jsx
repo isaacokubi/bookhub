@@ -12,27 +12,35 @@ export default function Navbar() {
   const [open, setOpen] = useState(false);
 
   const navStyle = ({ isActive }) =>
-    isActive ? "text-blue-600 font-semibold" : "hover:text-blue-600";
+    isActive ? "text-blue-600 font-semibold" : "hover:text-blue-600 transition";
+
+  const isCustomer = user?.role === "customer" || user?.role === "user";
+
+  const isSeller = user?.role === "seller";
+
+  const isAdmin = user?.role === "admin";
 
   return (
-    <nav className="bg-white dark:bg-slate-900 shadow-md">
+    <nav className="bg-white dark:bg-slate-900 shadow-md sticky top-0 z-50">
       <div
         className="
-        container mx-auto 
-        px-5 py-4 
-        flex 
-        justify-between 
-        items-center
+          container
+          mx-auto
+          px-5
+          py-4
+          flex
+          justify-between
+          items-center
         "
       >
         {/* Logo */}
         <Link
           to="/"
           className="
-          text-2xl
-          font-bold
-          text-blue-600
-          dark:text-blue-400
+            text-2xl
+            font-bold
+            text-blue-600
+            dark:text-blue-400
           "
         >
           📚 BookHub Kenya
@@ -42,9 +50,9 @@ export default function Navbar() {
         <button
           onClick={() => setOpen(!open)}
           className="
-          md:hidden
-          text-2xl
-          dark:text-white
+            md:hidden
+            text-2xl
+            dark:text-white
           "
         >
           ☰
@@ -53,112 +61,224 @@ export default function Navbar() {
         {/* Navigation */}
         <div
           className={`
-          ${open ? "flex" : "hidden"}
-          md:flex
-          flex-col
-          md:flex-row
-          absolute
-          md:static
-          top-16
-          left-0
-          w-full
-          md:w-auto
-          bg-white
-          dark:bg-slate-900
-          md:bg-transparent
-          p-5
-          md:p-0
-          gap-5
-          items-center
-          text-gray-700
-          dark:text-gray-200
+            ${open ? "flex" : "hidden"}
+            md:flex
+            flex-col
+            md:flex-row
+            absolute
+            md:static
+            top-16
+            left-0
+            w-full
+            md:w-auto
+            bg-white
+            dark:bg-slate-900
+            md:bg-transparent
+            p-5
+            md:p-0
+            gap-5
+            items-center
+            text-gray-700
+            dark:text-gray-200
           `}
         >
-          <NavLink to="/books" className={navStyle}>
+          {/* PUBLIC LINKS */}
+          <NavLink to="/" className={navStyle} onClick={() => setOpen(false)}>
+            Home
+          </NavLink>
+
+          <NavLink
+            to="/books"
+            className={navStyle}
+            onClick={() => setOpen(false)}
+          >
             Books
           </NavLink>
 
-          <NavLink to="/favorites" className={navStyle}>
-            Favorites
-          </NavLink>
-
-          <NavLink to="/cart" className={navStyle}>
-            Cart
-            {cart.length > 0 && (
-              <span
-                className="
-                ml-1
-                bg-blue-600
-                text-white
-                text-xs
-                px-2
-                py-1
-                rounded-full
-                "
-              >
-                {cart.length}
-              </span>
-            )}
-          </NavLink>
-
-          {/* Orders */}
-          {user && (
-            <NavLink to="/orders" className={navStyle}>
-              Orders
-            </NavLink>
-          )}
-
-          {/* Seller Dashboard */}
-          {user?.role === "seller" && (
-            <NavLink to="/seller/dashboard" className={navStyle}>
-              Seller Dashboard
-            </NavLink>
-          )}
-
-          {/* Admin Dashboard */}
-          {user?.role === "admin" && (
-            <NavLink to="/admin/dashboard" className={navStyle}>
-              Admin Dashboard
-            </NavLink>
-          )}
-
-          {!user ? (
+          {/* CUSTOMER LINKS */}
+          {isCustomer && (
             <>
-              <NavLink to="/login" className={navStyle}>
+              <NavLink
+                to="/favorites"
+                className={navStyle}
+                onClick={() => setOpen(false)}
+              >
+                Favorites
+              </NavLink>
+
+              <NavLink
+                to="/cart"
+                className={navStyle}
+                onClick={() => setOpen(false)}
+              >
+                Cart
+                {cart.length > 0 && (
+                  <span
+                    className="
+                      ml-1
+                      bg-blue-600
+                      text-white
+                      text-xs
+                      px-2
+                      py-1
+                      rounded-full
+                    "
+                  >
+                    {cart.length}
+                  </span>
+                )}
+              </NavLink>
+
+              <NavLink
+                to="/orders"
+                className={navStyle}
+                onClick={() => setOpen(false)}
+              >
+                My Orders
+              </NavLink>
+            </>
+          )}
+
+          {/* SELLER LINKS */}
+          {isSeller && (
+            <>
+              <NavLink
+                to="/seller/dashboard"
+                className={navStyle}
+                onClick={() => setOpen(false)}
+              >
+                Dashboard
+              </NavLink>
+
+              <NavLink
+                to="/seller/books"
+                className={navStyle}
+                onClick={() => setOpen(false)}
+              >
+                My Books
+              </NavLink>
+
+              <NavLink
+                to="/seller/add-book"
+                className={navStyle}
+                onClick={() => setOpen(false)}
+              >
+                Add Book
+              </NavLink>
+
+              <NavLink
+                to="/seller/orders"
+                className={navStyle}
+                onClick={() => setOpen(false)}
+              >
+                Sales
+              </NavLink>
+            </>
+          )}
+
+          {/* ADMIN LINKS */}
+          {isAdmin && (
+            <>
+              <NavLink
+                to="/admin/dashboard"
+                className={navStyle}
+                onClick={() => setOpen(false)}
+              >
+                Dashboard
+              </NavLink>
+
+              <NavLink
+                to="/admin/users"
+                className={navStyle}
+                onClick={() => setOpen(false)}
+              >
+                Users
+              </NavLink>
+
+              <NavLink
+                to="/admin/books"
+                className={navStyle}
+                onClick={() => setOpen(false)}
+              >
+                Books
+              </NavLink>
+
+              <NavLink
+                to="/admin/orders"
+                className={navStyle}
+                onClick={() => setOpen(false)}
+              >
+                Orders
+              </NavLink>
+
+              <NavLink
+                to="/admin/sellers"
+                className={navStyle}
+                onClick={() => setOpen(false)}
+              >
+                Sellers
+              </NavLink>
+            </>
+          )}
+
+          {/* GUEST LINKS */}
+          {!user && (
+            <>
+              <NavLink
+                to="/login"
+                className={navStyle}
+                onClick={() => setOpen(false)}
+              >
                 Login
+              </NavLink>
+
+              <NavLink
+                to="/register"
+                className={navStyle}
+                onClick={() => setOpen(false)}
+              >
+                Register
               </NavLink>
 
               <Link
                 to="/seller/register"
+                onClick={() => setOpen(false)}
                 className="
-                bg-blue-600
-                text-white
-                px-4
-                py-2
-                rounded-lg
-                hover:bg-blue-700
+                  bg-blue-600
+                  text-white
+                  px-4
+                  py-2
+                  rounded-lg
+                  hover:bg-blue-700
                 "
               >
                 Become a Seller
               </Link>
             </>
-          ) : (
+          )}
+
+          {/* LOGGED IN USER */}
+          {user && (
             <div className="flex items-center gap-3">
               <span
                 className="
-                hidden
-                md:block
-                text-sm
+                  hidden
+                  md:block
+                  text-sm
                 "
               >
-                Hi, {user.name}
+                Hi, {user?.name}
               </span>
 
               <button
-                onClick={logout}
+                onClick={() => {
+                  logout();
+                  setOpen(false);
+                }}
                 className="
-                text-red-500
-                hover:text-red-700
+                  text-red-500
+                  hover:text-red-700
+                  font-medium
                 "
               >
                 Logout
@@ -166,13 +286,8 @@ export default function Navbar() {
             </div>
           )}
 
-          {/* Theme Toggle */}
-          <button
-            onClick={() => setDark(!dark)}
-            className="
-            text-xl
-            "
-          >
+          {/* THEME TOGGLE */}
+          <button onClick={() => setDark(!dark)} className="text-xl">
             {dark ? "☀️" : "🌙"}
           </button>
         </div>
