@@ -6,6 +6,9 @@ import { useCart } from "../context/CartContext";
 export default function Cart() {
   const { cart, removeFromCart } = useCart();
 
+  // Cart now contains items inside cart.books
+  const cartItems = cart?.books || [];
+
   const handleRemoveFromCart = (id) => {
     removeFromCart(id);
 
@@ -15,13 +18,16 @@ export default function Cart() {
     });
   };
 
-  const total = cart.reduce((sum, item) => sum + item.price, 0);
+  const total = cartItems.reduce(
+    (sum, item) => sum + (item.book?.price || 0) * item.quantity,
+    0,
+  );
 
   return (
     <div className="container mx-auto px-5 py-10">
       <h1 className="text-3xl font-bold">Shopping Cart</h1>
 
-      {cart.length === 0 ? (
+      {cartItems.length === 0 ? (
         <div className="mt-8">
           <p className="text-gray-500">Your cart is empty.</p>
 
@@ -43,9 +49,9 @@ export default function Cart() {
       ) : (
         <>
           <div className="mt-8">
-            {cart.map((item) => (
+            {cartItems.map((item) => (
               <div
-                key={item._id}
+                key={item.book._id}
                 className="
                 border
                 p-4
@@ -58,9 +64,13 @@ export default function Cart() {
                 "
               >
                 <div>
-                  <h2 className="font-bold">{item.title}</h2>
+                  <h2 className="font-bold text-lg">{item.book.title}</h2>
 
-                  <p>{item.author}</p>
+                  <p>{item.book.author}</p>
+
+                  <p className="text-sm text-gray-500">
+                    Quantity: {item.quantity}
+                  </p>
                 </div>
 
                 <div className="flex items-center gap-5">
@@ -70,11 +80,11 @@ export default function Cart() {
                     text-blue-600
                     "
                   >
-                    KES {item.price}
+                    KES {item.book.price}
                   </span>
 
                   <button
-                    onClick={() => handleRemoveFromCart(item._id)}
+                    onClick={() => handleRemoveFromCart(item.book._id)}
                     className="
                     bg-red-600
                     text-white
@@ -101,7 +111,7 @@ export default function Cart() {
             <div className="mb-4">
               <h2 className="text-xl font-bold">Order Summary</h2>
 
-              <p>Books: {cart.length}</p>
+              <p>Books: {cartItems.length}</p>
 
               <p
                 className="
