@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { useAuth } from "./AuthContext";
+
 import {
   getCart,
   addToCart as addToCartApi,
@@ -7,97 +8,246 @@ import {
   clearCart as clearCartApi,
 } from "../api/cartApi";
 
+
 const CartContext = createContext();
 
+
+
 export function CartProvider({ children }) {
+
   const { user } = useAuth();
 
-  const [cart, setCart] = useState([]);
+
+  const [cart, setCart] = useState({
+    books: [],
+  });
+
+
   const [loading, setLoading] = useState(false);
 
-  // Load user's cart from database
+
+
+  // ==============================
+  // LOAD USER CART
+  // ==============================
   const loadCart = async () => {
+
     if (!user) {
-      setCart([]);
+
+      setCart({
+        books: [],
+      });
+
       return;
     }
 
+
     try {
+
       setLoading(true);
+
 
       const cartData = await getCart();
 
-      setCart(cartData.books || []);
+
+      // Keep full cart object
+      setCart(cartData);
+
+
     } catch (error) {
-      console.error("Failed to load cart:", error);
-      setCart([]);
+
+      console.error(
+        "Failed to load cart:",
+        error
+      );
+
+
+      setCart({
+        books: [],
+      });
+
+
     } finally {
+
       setLoading(false);
+
     }
+
   };
 
-  // Reload cart when user logs in/out
+
+
+
+
+  // Reload when user changes
   useEffect(() => {
+
     loadCart();
+
   }, [user]);
 
-  // Add book to cart
+
+
+
+
+
+
+  // ==============================
+  // ADD TO CART
+  // ==============================
   const addBookToCart = async (bookId) => {
+
     try {
+
       const cartData = await addToCartApi(bookId);
 
-      setCart(cartData.books || []);
+
+      setCart(cartData);
+
+
     } catch (error) {
-      console.error("Failed to add to cart:", error);
+
+      console.error(
+        "Failed to add to cart:",
+        error
+      );
+
     }
+
   };
 
-  // Remove book from cart
+
+
+
+
+
+
+  // ==============================
+  // REMOVE FROM CART
+  // ==============================
   const removeBookFromCart = async (bookId) => {
+
     try {
+
       const cartData = await removeFromCartApi(bookId);
 
-      setCart(cartData.books || []);
+
+      setCart(cartData);
+
+
     } catch (error) {
-      console.error("Failed to remove from cart:", error);
+
+      console.error(
+        "Failed to remove from cart:",
+        error
+      );
+
     }
+
   };
 
-  // Clear cart
+
+
+
+
+
+
+
+  // ==============================
+  // CLEAR CART
+  // ==============================
   const clearCart = async () => {
+
     try {
+
       await clearCartApi();
 
-      setCart([]);
+
+      setCart({
+        books: [],
+      });
+
+
     } catch (error) {
-      console.error("Failed to clear cart:", error);
+
+      console.error(
+        "Failed to clear cart:",
+        error
+      );
+
     }
+
   };
 
+
+
+
+
+
+
+
   return (
+
     <CartContext.Provider
+
       value={{
+
         cart,
-        cartCount: cart.length,
+
+
+        // number of books in cart
+        cartCount: cart.books?.length || 0,
+
+
         loading,
+
+
         loadCart,
+
+
         addToCart: addBookToCart,
+
+
         removeFromCart: removeBookFromCart,
+
+
         clearCart,
+
+
         setCart,
+
       }}
+
     >
+
       {children}
+
     </CartContext.Provider>
+
   );
+
 }
 
+
+
+
+
+
+
 export function useCart() {
+
   const context = useContext(CartContext);
 
+
   if (!context) {
-    throw new Error("useCart must be used within CartProvider");
+
+    throw new Error(
+      "useCart must be used within CartProvider"
+    );
+
   }
 
+
   return context;
+
 }
