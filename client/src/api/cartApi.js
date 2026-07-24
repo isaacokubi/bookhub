@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API = `${import.meta.env.VITE_API_URL}/api/cart`;
+const API = `${import.meta.env.VITE_API_URL}/cart`;
 
 const authConfig = () => ({
   headers: {
