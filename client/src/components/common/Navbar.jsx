@@ -12,36 +12,23 @@ export default function Navbar() {
   const [open, setOpen] = useState(false);
 
   const navStyle = ({ isActive }) =>
-    isActive ? "text-blue-600 font-semibold" : "hover:text-blue-600 transition";
-
-  const isCustomer = user?.role === "customer" || user?.role === "user";
-
-  const isSeller = user?.role === "seller";
+    isActive
+      ? "text-blue-600 font-semibold"
+      : "hover:text-blue-600 transition";
 
   const isAdmin = user?.role === "admin";
+  const isSeller = user?.role === "seller";
+
+  // Any logged-in user who is not admin or seller
+  const isCustomer = user && !isAdmin && !isSeller;
 
   return (
     <nav className="bg-white dark:bg-slate-900 shadow-md sticky top-0 z-50">
-      <div
-        className="
-          container
-          mx-auto
-          px-5
-          py-4
-          flex
-          justify-between
-          items-center
-        "
-      >
+      <div className="container mx-auto px-5 py-4 flex justify-between items-center">
         {/* Logo */}
         <Link
           to="/"
-          className="
-            text-2xl
-            font-bold
-            text-blue-600
-            dark:text-blue-400
-          "
+          className="text-2xl font-bold text-blue-600 dark:text-blue-400"
         >
           📚 BookHub Kenya
         </Link>
@@ -49,11 +36,7 @@ export default function Navbar() {
         {/* Mobile Menu Button */}
         <button
           onClick={() => setOpen(!open)}
-          className="
-            md:hidden
-            text-2xl
-            dark:text-white
-          "
+          className="md:hidden text-2xl dark:text-white"
         >
           ☰
         </button>
@@ -83,7 +66,11 @@ export default function Navbar() {
           `}
         >
           {/* PUBLIC LINKS */}
-          <NavLink to="/" className={navStyle} onClick={() => setOpen(false)}>
+          <NavLink
+            to="/"
+            className={navStyle}
+            onClick={() => setOpen(false)}
+          >
             Home
           </NavLink>
 
@@ -108,22 +95,17 @@ export default function Navbar() {
 
               <NavLink
                 to="/cart"
-                className={navStyle}
+                className={({ isActive }) =>
+                  isActive
+                    ? "text-blue-600 font-semibold flex items-center gap-1"
+                    : "hover:text-blue-600 transition flex items-center gap-1"
+                }
                 onClick={() => setOpen(false)}
               >
-                Cart
-                {cart.length > 0 && (
-                  <span
-                    className="
-                      ml-1
-                      bg-blue-600
-                      text-white
-                      text-xs
-                      px-2
-                      py-1
-                      rounded-full
-                    "
-                  >
+                🛒 Cart
+
+                {cart?.length > 0 && (
+                  <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full">
                     {cart.length}
                   </span>
                 )}
@@ -243,30 +225,17 @@ export default function Navbar() {
               <Link
                 to="/seller/register"
                 onClick={() => setOpen(false)}
-                className="
-                  bg-blue-600
-                  text-white
-                  px-4
-                  py-2
-                  rounded-lg
-                  hover:bg-blue-700
-                "
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
               >
                 Become a Seller
               </Link>
             </>
           )}
 
-          {/* LOGGED IN USER */}
+          {/* LOGGED-IN USER */}
           {user && (
             <div className="flex items-center gap-3">
-              <span
-                className="
-                  hidden
-                  md:block
-                  text-sm
-                "
-              >
+              <span className="hidden md:block text-sm">
                 Hi, {user?.name}
               </span>
 
@@ -275,11 +244,7 @@ export default function Navbar() {
                   logout();
                   setOpen(false);
                 }}
-                className="
-                  text-red-500
-                  hover:text-red-700
-                  font-medium
-                "
+                className="text-red-500 hover:text-red-700 font-medium"
               >
                 Logout
               </button>
@@ -287,7 +252,10 @@ export default function Navbar() {
           )}
 
           {/* THEME TOGGLE */}
-          <button onClick={() => setDark(!dark)} className="text-xl">
+          <button
+            onClick={() => setDark(!dark)}
+            className="text-xl hover:scale-110 transition"
+          >
             {dark ? "☀️" : "🌙"}
           </button>
         </div>
