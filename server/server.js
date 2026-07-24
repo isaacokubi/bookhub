@@ -8,6 +8,7 @@ import { Server } from "socket.io";
 
 import connectDatabase from "./config/database.js";
 
+import cartRoutes from "./routes/cartRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
 import bookRoutes from "./routes/bookRoutes.js";
 import orderRoutes from "./routes/orderRoutes.js";
@@ -155,6 +156,8 @@ app.get("/health", (req, res) => {
 // API ROUTES
 // ===============================
 
+
+app.use("/api/cart", cartRoutes);
 app.use("/api/auth", authRoutes);
 
 app.use("/api/books", bookRoutes);

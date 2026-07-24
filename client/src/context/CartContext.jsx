@@ -1,81 +1,88 @@
 import { createContext, useContext, useEffect, useState } from "react";
+import { useAuth } from "./AuthContext";
+import {
+  getCart,
+  addToCart as addToCartApi,
+  removeFromCart as removeFromCartApi,
+  clearCart as clearCartApi,
+} from "../api/cartApi";
 
 const CartContext = createContext();
 
 export function CartProvider({ children }) {
-  const getCartKey = () => {
-    try {
-      const user = JSON.parse(localStorage.getItem("user"));
+  const { user } = useAuth();
 
-      return user?._id ? `cart_${user._id}` : "cart_guest";
-    } catch (error) {
-      return "cart_guest";
+  const [cart, setCart] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  // Load user's cart from database
+  const loadCart = async () => {
+    if (!user) {
+      setCart([]);
+      return;
     }
-  };
 
-  const loadCart = () => {
     try {
-      const savedCart = localStorage.getItem(getCartKey());
+      setLoading(true);
 
-      return savedCart ? JSON.parse(savedCart) : [];
+      const cartData = await getCart();
+
+      setCart(cartData.books || []);
     } catch (error) {
       console.error("Failed to load cart:", error);
-
-      return [];
+      setCart([]);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const [cart, setCart] = useState(loadCart);
-
-  // Reload cart when user changes
+  // Reload cart when user logs in/out
   useEffect(() => {
-    setCart(loadCart());
-  }, []);
+    loadCart();
+  }, [user]);
 
-  // Save cart whenever it changes
-  useEffect(() => {
+  // Add book to cart
+  const addBookToCart = async (bookId) => {
     try {
-      localStorage.setItem(getCartKey(), JSON.stringify(cart));
+      const cartData = await addToCartApi(bookId);
+
+      setCart(cartData.books || []);
     } catch (error) {
-      console.error("Failed to save cart:", error);
+      console.error("Failed to add to cart:", error);
     }
-  }, [cart]);
-
-  const addToCart = (book) => {
-    setCart((prev) => {
-      const exists = prev.some((item) => item._id === book._id);
-
-      if (exists) {
-        return prev;
-      }
-
-      return [...prev, book];
-    });
   };
 
-  const removeFromCart = (id) => {
-    setCart((prev) => prev.filter((item) => item._id !== id));
-  };
-
-  const clearCart = () => {
-    setCart([]);
-
+  // Remove book from cart
+  const removeBookFromCart = async (bookId) => {
     try {
-      localStorage.removeItem(getCartKey());
+      const cartData = await removeFromCartApi(bookId);
+
+      setCart(cartData.books || []);
+    } catch (error) {
+      console.error("Failed to remove from cart:", error);
+    }
+  };
+
+  // Clear cart
+  const clearCart = async () => {
+    try {
+      await clearCartApi();
+
+      setCart([]);
     } catch (error) {
       console.error("Failed to clear cart:", error);
     }
   };
 
-  const cartCount = cart.length;
-
   return (
     <CartContext.Provider
       value={{
         cart,
-        cartCount,
-        addToCart,
-        removeFromCart,
+        cartCount: cart.length,
+        loading,
+        loadCart,
+        addToCart: addBookToCart,
+        removeFromCart: removeBookFromCart,
         clearCart,
         setCart,
       }}
