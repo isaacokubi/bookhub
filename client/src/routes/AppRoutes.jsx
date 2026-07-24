@@ -11,12 +11,15 @@ import Favorites from "../pages/Favorites";
 import Orders from "../pages/Orders";
 import Checkout from "../pages/Checkout";
 
+import { Routes, Route, Navigate } from "react-router-dom";
+
 // Admin
 import AdminRoute from "./AdminRoute";
 import AdminDashboard from "../pages/AdminDashboard";
 import AdminBooks from "../pages/AdminBooks";
 import AdminOrders from "../pages/AdminOrders";
 import AdminUsers from "../pages/AdminUsers";
+import AdminSellers from "../pages/admin/AdminSellers";
 
 // Seller pages
 import SellerRegister from "../pages/SellerRegister";
@@ -95,6 +98,16 @@ export default function AppRoutes() {
           </AdminRoute>
         }
       />
+      <Route
+        path="/admin/sellers"
+        element={
+          <AdminRoute>
+            <AdminSellers />
+          </AdminRoute>
+        }
+      />
+
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }

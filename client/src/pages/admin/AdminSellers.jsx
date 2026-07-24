@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getSellers, deleteSeller } from "../api/adminApi";
+import { getSellers, deleteSeller } from "../../api/adminApi";
 
 export default function AdminSellers() {
   const [sellers, setSellers] = useState([]);
