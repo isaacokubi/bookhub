@@ -15,6 +15,7 @@
     "cors": "latest",
     "dotenv": "latest",
     "express": "latest",
+    "express-list-endpoints": "^7.1.1",
     "express-mongo-sanitize": "latest",
     "express-rate-limit": "latest",
     "helmet": "latest",
