@@ -5,7 +5,6 @@ import morgan from "morgan";
 import cookieParser from "cookie-parser";
 import { createServer } from "http";
 import { Server } from "socket.io";
-import listEndpoints from "express-list-endpoints";
 
 import connectDatabase from "./config/database.js";
 
@@ -37,24 +36,33 @@ import setupSocket from "./sockets/socket.js";
 
 console.log(
   "RESEND_API_KEY:",
-  process.env.RESEND_API_KEY ? "Loaded" : "Missing",
+  process.env.RESEND_API_KEY ? "Loaded" : "Missing"
 );
 
 
 console.log("MPESA ENV CHECK:", {
-  consumerKey: process.env.MPESA_CONSUMER_KEY ? "Loaded" : "Missing",
 
-  consumerSecret: process.env.MPESA_CONSUMER_SECRET
-    ? "Loaded"
-    : "Missing",
+  consumerKey:
+    process.env.MPESA_CONSUMER_KEY
+      ? "Loaded"
+      : "Missing",
 
-  shortcode: process.env.MPESA_SHORTCODE || "Missing",
+  consumerSecret:
+    process.env.MPESA_CONSUMER_SECRET
+      ? "Loaded"
+      : "Missing",
 
-  passkey: process.env.MPESA_PASSKEY
-    ? "Loaded"
-    : "Missing",
+  shortcode:
+    process.env.MPESA_SHORTCODE || "Missing",
 
-  callback: process.env.MPESA_CALLBACK_URL || "Missing",
+  passkey:
+    process.env.MPESA_PASSKEY
+      ? "Loaded"
+      : "Missing",
+
+  callback:
+    process.env.MPESA_CALLBACK_URL || "Missing"
+
 });
 
 
@@ -112,7 +120,9 @@ app.use(
 
 
       return callback(
-        new Error("CORS blocked: " + origin)
+        new Error(
+          "CORS blocked: " + origin
+        )
       );
 
     },
@@ -122,19 +132,23 @@ app.use(
 
 
     methods: [
+
       "GET",
       "POST",
       "PUT",
       "PATCH",
       "DELETE",
-      "OPTIONS",
+      "OPTIONS"
+
     ],
 
 
     allowedHeaders: [
+
       "Content-Type",
-      "Authorization",
-    ],
+      "Authorization"
+
+    ]
 
   })
 );
@@ -165,7 +179,7 @@ app.use(morgan("dev"));
 // REQUEST LOGGER
 // ===============================
 
-app.use((req, res, next) => {
+app.use((req,res,next)=>{
 
   console.log(
     `${req.method} ${req.originalUrl}`
@@ -181,13 +195,15 @@ app.use((req, res, next) => {
 // ROOT ROUTE
 // ===============================
 
-app.get("/", (req, res) => {
+app.get("/",(req,res)=>{
 
   res.json({
 
-    message: "BookHub Kenya API Running",
+    message:
+      "BookHub Kenya API Running",
 
-    status: "success",
+    status:
+      "success"
 
   });
 
@@ -199,15 +215,18 @@ app.get("/", (req, res) => {
 // HEALTH CHECK
 // ===============================
 
-app.get("/health", (req, res) => {
+app.get("/health",(req,res)=>{
 
   res.json({
 
-    status: "OK",
+    status:
+      "OK",
 
-    server: "BookHub Kenya API",
+    server:
+      "BookHub Kenya API",
 
-    time: new Date(),
+    time:
+      new Date()
 
   });
 
@@ -220,33 +239,88 @@ app.get("/health", (req, res) => {
 // ===============================
 
 
-app.use("/api/cart", cartRoutes);
+app.use(
+  "/api/cart",
+  cartRoutes
+);
 
-app.use("/api/auth", authRoutes);
 
-app.use("/api/books", bookRoutes);
+app.use(
+  "/api/auth",
+  authRoutes
+);
 
-app.use("/api/orders", orderRoutes);
 
-app.use("/api/mpesa", mpesaRoutes);
+app.use(
+  "/api/books",
+  bookRoutes
+);
 
-app.use("/api/messages", messageRoutes);
 
-app.use("/api/reviews", reviewRoutes);
+app.use(
+  "/api/orders",
+  orderRoutes
+);
 
-app.use("/api/favorites", favoriteRoutes);
 
-app.use("/api/admin", adminRoutes);
+app.use(
+  "/api/mpesa",
+  mpesaRoutes
+);
 
-app.use("/api/notifications", notificationRoutes);
 
-app.use("/api/wallet", walletRoutes);
+app.use(
+  "/api/messages",
+  messageRoutes
+);
 
-app.use("/api/withdrawals", withdrawalRoutes);
 
-app.use("/api/seller", sellerRoutes);
+app.use(
+  "/api/reviews",
+  reviewRoutes
+);
 
-app.use("/api/categories", categoryRoutes);
+
+app.use(
+  "/api/favorites",
+  favoriteRoutes
+);
+
+
+app.use(
+  "/api/admin",
+  adminRoutes
+);
+
+
+app.use(
+  "/api/notifications",
+  notificationRoutes
+);
+
+
+app.use(
+  "/api/wallet",
+  walletRoutes
+);
+
+
+app.use(
+  "/api/withdrawals",
+  withdrawalRoutes
+);
+
+
+app.use(
+  "/api/seller",
+  sellerRoutes
+);
+
+
+app.use(
+  "/api/categories",
+  categoryRoutes
+);
 
 
 
@@ -254,13 +328,93 @@ app.use("/api/categories", categoryRoutes);
 // DEBUG: LIST ALL ENDPOINTS
 // ===============================
 
-console.log("\n===============================");
-console.log("AVAILABLE API ENDPOINTS");
-console.log("===============================\n");
+function listRoutes(app) {
 
-console.log(
-  listEndpoints(app)
-);
+  console.log("\n===============================");
+  console.log("REGISTERED ROUTES");
+  console.log("===============================\n");
+
+
+  // Express 4
+  const router =
+    app._router || app.router;
+
+
+  if (!router) {
+
+    console.log(
+      "No router found"
+    );
+
+    return;
+
+  }
+
+
+  router.stack.forEach((middleware)=>{
+
+
+    if (middleware.route) {
+
+
+      console.log(
+
+        Object.keys(
+          middleware.route.methods
+        )
+        .join(",")
+        .toUpperCase(),
+
+        middleware.route.path
+
+      );
+
+
+    }
+
+
+    else if (
+      middleware.name === "router"
+    ) {
+
+
+      middleware.handle.stack.forEach(
+        (handler)=>{
+
+
+          if(handler.route){
+
+
+            console.log(
+
+              Object.keys(
+                handler.route.methods
+              )
+              .join(",")
+              .toUpperCase(),
+
+              handler.route.path
+
+            );
+
+
+          }
+
+
+        }
+      );
+
+
+    }
+
+
+  });
+
+
+}
+
+
+listRoutes(app);
 
 
 
@@ -277,10 +431,12 @@ app.use(errorHandler);
 // HTTP SERVER
 // ===============================
 
-const PORT = process.env.PORT || 5000;
+const PORT =
+  process.env.PORT || 5000;
 
 
-const httpServer = createServer(app);
+const httpServer =
+  createServer(app);
 
 
 
@@ -288,20 +444,29 @@ const httpServer = createServer(app);
 // SOCKET.IO
 // ===============================
 
-const io = new Server(httpServer, {
+const io =
+new Server(httpServer, {
 
-  cors: {
 
-    origin: allowedOrigins,
+  cors:{
 
-    credentials: true,
 
-    methods: [
+    origin:
+      allowedOrigins,
+
+
+    credentials:
+      true,
+
+
+    methods:[
       "GET",
-      "POST",
-    ],
+      "POST"
+    ]
 
-  },
+
+  }
+
 
 });
 
@@ -315,10 +480,12 @@ setupSocket(io);
 // START SERVER
 // ===============================
 
-httpServer.listen(PORT, () => {
+httpServer.listen(PORT,()=>{
+
 
   console.log(
     `BookHub API running on port ${PORT}`
   );
+
 
 });
