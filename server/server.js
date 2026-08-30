@@ -21,19 +21,87 @@ import withdrawalRoutes from "./routes/withdrawalRoutes.js";
 import sellerRoutes from "./routes/sellerRoutes.js";
 import categoryRoutes from "./routes/categoryRoutes.js";
 import customerDashboardRoutes from "./routes/customerDashboardRoutes.js";
+import { approveExistingSellerBooks } from "./scripts/approveExistingSellerBooks.js";
 import sanitize from "./middleware/sanitize.js";
 import { securityMiddleware } from "./middleware/security.js";
 import errorHandler from "./middleware/errorHandler.js";
 import setupSocket from "./sockets/socket.js";
-const app=express(); const port=Number(process.env.PORT)||5000;
-if(!process.env.MONGODB_URI) throw new Error("MONGODB_URI is required");
-if(!process.env.JWT_SECRET||process.env.JWT_SECRET.length<32) throw new Error("JWT_SECRET is required and must be at least 32 characters long");
-const allowedOrigins=String(process.env.CLIENT_URL||"http://localhost:5173").split(",").map(o=>o.trim().replace(/\/$/,"")).filter(Boolean);
+
+const app = express();
+const port = Number(process.env.PORT) || 5000;
+
+if (!process.env.MONGODB_URI) throw new Error("MONGODB_URI is required");
+if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
+  throw new Error("JWT_SECRET is required and must be at least 32 characters long");
+}
+
+const allowedOrigins = String(process.env.CLIENT_URL || "http://localhost:5173")
+  .split(",")
+  .map((origin) => origin.trim().replace(/\/$/, ""))
+  .filter(Boolean);
+
 securityMiddleware(app);
-const corsOptions={origin(origin,callback){if(!origin||allowedOrigins.includes(origin.replace(/\/$/,"")))return callback(null,true);return callback(new Error(`CORS blocked: ${origin}`));},credentials:true,methods:["GET","POST","PUT","PATCH","DELETE","OPTIONS"],allowedHeaders:["Content-Type","Authorization"]};
-app.use(cors(corsOptions)); app.use(express.json({limit:"1mb"})); app.use(cookieParser()); app.use(sanitize); app.use(morgan(process.env.NODE_ENV==="production"?"combined":"dev"));
-app.get("/",(req,res)=>res.json({message:"BookHub Kenya API Running",status:"success"})); app.get("/health",(req,res)=>res.json({status:"OK",server:"BookHub Kenya API",time:new Date()}));
-app.use("/api/cart",cartRoutes); app.use("/api/auth",authRoutes); app.use("/api/books",bookRoutes); app.use("/api/orders",orderRoutes); app.use("/api/mpesa",mpesaRoutes); app.use("/api/messages",messageRoutes); app.use("/api/reviews",reviewRoutes); app.use("/api/favorites",favoriteRoutes); app.use("/api/admin",adminRoutes); app.use("/api/notifications",notificationRoutes); app.use("/api/wallet",walletRoutes); app.use("/api/withdrawals",withdrawalRoutes); app.use("/api/seller",sellerRoutes); app.use("/api/categories",categoryRoutes); app.use("/api/customer/dashboard",customerDashboardRoutes);
+
+const corsOptions = {
+  origin(origin, callback) {
+    if (!origin || allowedOrigins.includes(origin.replace(/\/$/, ""))) {
+      return callback(null, true);
+    }
+    return callback(new Error(`CORS blocked: ${origin}`));
+  },
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+};
+
+app.use(cors(corsOptions));
+app.use(express.json({ limit: "1mb" }));
+app.use(cookieParser());
+app.use(sanitize);
+app.use(morgan(process.env.NODE_ENV === "production" ? "combined" : "dev"));
+
+app.get("/", (req, res) => res.json({ message: "BookHub Kenya API Running", status: "success" }));
+app.get("/health", (req, res) => res.json({ status: "OK", server: "BookHub Kenya API", time: new Date() }));
+
+app.use("/api/cart", cartRoutes);
+app.use("/api/auth", authRoutes);
+app.use("/api/books", bookRoutes);
+app.use("/api/orders", orderRoutes);
+app.use("/api/mpesa", mpesaRoutes);
+app.use("/api/messages", messageRoutes);
+app.use("/api/reviews", reviewRoutes);
+app.use("/api/favorites", favoriteRoutes);
+app.use("/api/admin", adminRoutes);
+app.use("/api/notifications", notificationRoutes);
+app.use("/api/wallet", walletRoutes);
+app.use("/api/withdrawals", withdrawalRoutes);
+app.use("/api/seller", sellerRoutes);
+app.use("/api/categories", categoryRoutes);
+app.use("/api/customer/dashboard", customerDashboardRoutes);
+
 app.use(errorHandler);
-const httpServer=createServer(app); const io=new Server(httpServer,{cors:{origin:allowedOrigins,credentials:true,methods:["GET","POST"]}}); setupSocket(io);
-const startServer=async()=>{await connectDatabase();httpServer.listen(port,()=>{console.log(`BookHub API running on port ${port}`);console.log(`Allowed frontend origins: ${allowedOrigins.join(", ")}`);});}; startServer().catch(error=>{console.error("Server startup failed:",error);process.exit(1);});
+
+const httpServer = createServer(app);
+const io = new Server(httpServer, {
+  cors: { origin: allowedOrigins, credentials: true, methods: ["GET", "POST"] },
+});
+setupSocket(io);
+
+const startServer = async () => {
+  await connectDatabase();
+
+  // Self-heal legacy data on every deploy/restart. This is idempotent and only
+  // changes pending books owned by active seller accounts; rejected listings
+  // remain untouched for moderation/audit purposes.
+  await approveExistingSellerBooks();
+
+  httpServer.listen(port, () => {
+    console.log(`BookHub API running on port ${port}`);
+    console.log(`Allowed frontend origins: ${allowedOrigins.join(", ")}`);
+  });
+};
+
+startServer().catch((error) => {
+  console.error("Server startup failed:", error);
+  process.exit(1);
+});
