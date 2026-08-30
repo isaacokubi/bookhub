@@ -7,6 +7,7 @@ import {
   deleteBook,
   getPublicSellers,
   getPublicSellerStore,
+  updateSellerProfileImage,
 } from "../controllers/sellerController.js";
 import { getSellerOrders } from "../controllers/sellerOrderController.js";
 import auth from "../middleware/auth.js";
@@ -18,6 +19,9 @@ const router = express.Router();
 // Public buyer-facing seller discovery and storefronts.
 router.get("/public", getPublicSellers);
 router.get("/public/:id/books", getPublicSellerStore);
+
+// Seller profile.
+router.put("/profile/avatar", auth, sellerOnly, upload.single("avatar"), updateSellerProfileImage);
 
 router.post("/books", auth, sellerOnly, upload.single("image"), createBook);
 router.get("/books", auth, sellerOnly, getSellerBooks);
