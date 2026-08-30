@@ -7,7 +7,6 @@ import { createServer } from "http";
 import { Server } from "socket.io";
 
 import connectDatabase from "./config/database.js";
-
 import cartRoutes from "./routes/cartRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
 import bookRoutes from "./routes/bookRoutes.js";
@@ -22,470 +21,72 @@ import walletRoutes from "./routes/walletRoutes.js";
 import withdrawalRoutes from "./routes/withdrawalRoutes.js";
 import sellerRoutes from "./routes/sellerRoutes.js";
 import categoryRoutes from "./routes/categoryRoutes.js";
-
 import sanitize from "./middleware/sanitize.js";
 import { securityMiddleware } from "./middleware/security.js";
 import errorHandler from "./middleware/errorHandler.js";
-
 import setupSocket from "./sockets/socket.js";
 
-
-// ===============================
-// ENVIRONMENT DEBUG CHECKS
-// ===============================
-
-console.log(
-  "RESEND_API_KEY:",
-  process.env.RESEND_API_KEY ? "Loaded" : "Missing"
-);
-
-
-console.log("MPESA ENV CHECK:", {
-
-  consumerKey:
-    process.env.MPESA_CONSUMER_KEY
-      ? "Loaded"
-      : "Missing",
-
-  consumerSecret:
-    process.env.MPESA_CONSUMER_SECRET
-      ? "Loaded"
-      : "Missing",
-
-  shortcode:
-    process.env.MPESA_SHORTCODE || "Missing",
-
-  passkey:
-    process.env.MPESA_PASSKEY
-      ? "Loaded"
-      : "Missing",
-
-  callback:
-    process.env.MPESA_CALLBACK_URL || "Missing"
-
-});
-
-
 const app = express();
+const port = Number(process.env.PORT) || 5000;
 
-
-// ===============================
-// DATABASE
-// ===============================
+const allowedOrigins = String(process.env.CLIENT_URL || "http://localhost:5173")
+  .split(",")
+  .map((origin) => origin.trim().replace(/\/$/, ""))
+  .filter(Boolean);
 
 connectDatabase();
-
-
-// ===============================
-// SECURITY
-// ===============================
-
 securityMiddleware(app);
 
+const corsOptions = {
+  origin(origin, callback) {
+    if (!origin || allowedOrigins.includes(origin.replace(/\/$/, ""))) {
+      return callback(null, true);
+    }
+    return callback(new Error(`CORS blocked: ${origin}`));
+  },
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+};
 
-// ===============================
-// ALLOWED FRONTEND URLS
-// ===============================
-
-const allowedOrigins = [
-
-  "http://localhost:5173",
-
-  "https://bookhub-swart.vercel.app",
-
-];
-
-
-// ===============================
-// CORS
-// ===============================
-
-app.use(
-  cors({
-
-    origin: function(origin, callback) {
-
-      if (!origin) {
-
-        return callback(null, true);
-
-      }
-
-
-      if (allowedOrigins.includes(origin)) {
-
-        return callback(null, true);
-
-      }
-
-
-      return callback(
-        new Error(
-          "CORS blocked: " + origin
-        )
-      );
-
-    },
-
-
-    credentials: true,
-
-
-    methods: [
-
-      "GET",
-      "POST",
-      "PUT",
-      "PATCH",
-      "DELETE",
-      "OPTIONS"
-
-    ],
-
-
-    allowedHeaders: [
-
-      "Content-Type",
-      "Authorization"
-
-    ]
-
-  })
-);
-
-
-
-// ===============================
-// BODY PARSER
-// ===============================
-
-app.use(express.json());
-
+app.use(cors(corsOptions));
+app.use(express.json({ limit: "1mb" }));
 app.use(cookieParser());
-
-
-
-// ===============================
-// MIDDLEWARE
-// ===============================
-
 app.use(sanitize);
-
-app.use(morgan("dev"));
-
-
-
-// ===============================
-// REQUEST LOGGER
-// ===============================
-
-app.use((req,res,next)=>{
-
-  console.log(
-    `${req.method} ${req.originalUrl}`
-  );
-
-  next();
-
-});
-
-
-
-// ===============================
-// ROOT ROUTE
-// ===============================
-
-app.get("/",(req,res)=>{
-
-  res.json({
-
-    message:
-      "BookHub Kenya API Running",
-
-    status:
-      "success"
-
-  });
-
-});
-
-
-
-// ===============================
-// HEALTH CHECK
-// ===============================
-
-app.get("/health",(req,res)=>{
-
-  res.json({
-
-    status:
-      "OK",
-
-    server:
-      "BookHub Kenya API",
-
-    time:
-      new Date()
-
-  });
-
-});
-
-
-
-// ===============================
-// API ROUTES
-// ===============================
-
-
-app.use(
-  "/api/cart",
-  cartRoutes
-);
-
-
-app.use(
-  "/api/auth",
-  authRoutes
-);
-
-
-app.use(
-  "/api/books",
-  bookRoutes
-);
-
-
-app.use(
-  "/api/orders",
-  orderRoutes
-);
-
-
-app.use(
-  "/api/mpesa",
-  mpesaRoutes
-);
-
-
-app.use(
-  "/api/messages",
-  messageRoutes
-);
-
-
-app.use(
-  "/api/reviews",
-  reviewRoutes
-);
-
-
-app.use(
-  "/api/favorites",
-  favoriteRoutes
-);
-
-
-app.use(
-  "/api/admin",
-  adminRoutes
-);
-
-
-app.use(
-  "/api/notifications",
-  notificationRoutes
-);
-
-
-app.use(
-  "/api/wallet",
-  walletRoutes
-);
-
-
-app.use(
-  "/api/withdrawals",
-  withdrawalRoutes
-);
-
-
-app.use(
-  "/api/seller",
-  sellerRoutes
-);
-
-
-app.use(
-  "/api/categories",
-  categoryRoutes
-);
-
-
-
-// ===============================
-// DEBUG: LIST ALL ENDPOINTS
-// ===============================
-
-function listRoutes(app) {
-
-  console.log("\n===============================");
-  console.log("REGISTERED ROUTES");
-  console.log("===============================\n");
-
-
-  // Express 4
-  const router =
-    app._router || app.router;
-
-
-  if (!router) {
-
-    console.log(
-      "No router found"
-    );
-
-    return;
-
-  }
-
-
-  router.stack.forEach((middleware)=>{
-
-
-    if (middleware.route) {
-
-
-      console.log(
-
-        Object.keys(
-          middleware.route.methods
-        )
-        .join(",")
-        .toUpperCase(),
-
-        middleware.route.path
-
-      );
-
-
-    }
-
-
-    else if (
-      middleware.name === "router"
-    ) {
-
-
-      middleware.handle.stack.forEach(
-        (handler)=>{
-
-
-          if(handler.route){
-
-
-            console.log(
-
-              Object.keys(
-                handler.route.methods
-              )
-              .join(",")
-              .toUpperCase(),
-
-              handler.route.path
-
-            );
-
-
-          }
-
-
-        }
-      );
-
-
-    }
-
-
-  });
-
-
-}
-
-
-listRoutes(app);
-
-
-
-// ===============================
-// ERROR HANDLER
-// MUST BE LAST
-// ===============================
+app.use(morgan(process.env.NODE_ENV === "production" ? "combined" : "dev"));
+
+app.get("/", (req, res) => res.json({ message: "BookHub Kenya API Running", status: "success" }));
+app.get("/health", (req, res) => res.json({ status: "OK", server: "BookHub Kenya API", time: new Date() }));
+
+app.use("/api/cart", cartRoutes);
+app.use("/api/auth", authRoutes);
+app.use("/api/books", bookRoutes);
+app.use("/api/orders", orderRoutes);
+app.use("/api/mpesa", mpesaRoutes);
+app.use("/api/messages", messageRoutes);
+app.use("/api/reviews", reviewRoutes);
+app.use("/api/favorites", favoriteRoutes);
+app.use("/api/admin", adminRoutes);
+app.use("/api/notifications", notificationRoutes);
+app.use("/api/wallet", walletRoutes);
+app.use("/api/withdrawals", withdrawalRoutes);
+app.use("/api/seller", sellerRoutes);
+app.use("/api/categories", categoryRoutes);
 
 app.use(errorHandler);
 
-
-
-// ===============================
-// HTTP SERVER
-// ===============================
-
-const PORT =
-  process.env.PORT || 5000;
-
-
-const httpServer =
-  createServer(app);
-
-
-
-// ===============================
-// SOCKET.IO
-// ===============================
-
-const io =
-new Server(httpServer, {
-
-
-  cors:{
-
-
-    origin:
-      allowedOrigins,
-
-
-    credentials:
-      true,
-
-
-    methods:[
-      "GET",
-      "POST"
-    ]
-
-
-  }
-
-
+const httpServer = createServer(app);
+const io = new Server(httpServer, {
+  cors: {
+    origin: allowedOrigins,
+    credentials: true,
+    methods: ["GET", "POST"],
+  },
 });
-
-
 
 setupSocket(io);
 
-
-
-// ===============================
-// START SERVER
-// ===============================
-
-httpServer.listen(PORT,()=>{
-
-
-  console.log(
-    `BookHub API running on port ${PORT}`
-  );
-
-
+httpServer.listen(port, () => {
+  console.log(`BookHub API running on port ${port}`);
+  console.log(`Allowed frontend origins: ${allowedOrigins.join(", ")}`);
 });
