@@ -31,10 +31,23 @@ export const expireStalePendingPayments = async () => {
     },
   );
 
-  await Order.updateMany(
-    { _id: { $in: orderIds }, paymentStatus: "Pending" },
-    { $set: { paymentStatus: "Failed" } },
-  );
+  // Only mark an order failed when it has no newer active M-Pesa request.
+  // This prevents an older expired request from cancelling a payment retry
+  // that is currently still pending.
+  for (const orderId of orderIds) {
+    const hasActivePayment = await Payment.exists({
+      order: orderId,
+      status: "Pending",
+      createdAt: { $gte: cutoff },
+    });
+
+    if (!hasActivePayment) {
+      await Order.updateOne(
+        { _id: orderId, paymentStatus: "Pending" },
+        { $set: { paymentStatus: "Failed" } },
+      );
+    }
+  }
 
   return stalePayments.length;
 };
