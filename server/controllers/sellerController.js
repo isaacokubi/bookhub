@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import Book from "../models/Book.js";
 import User from "../models/User.js";
+import { uploadImage } from "../services/cloudinaryService.js";
 
 // Public seller directory. Only active seller accounts are exposed.
 export const getPublicSellers = async (req, res) => {
@@ -76,7 +77,7 @@ export const createBook = async (req, res) => {
       price: Number(req.body.price),
       category: req.body.category,
       condition: req.body.condition,
-      images: req.file ? [req.file.path] : [],
+      images: req.file ? [await uploadImage(req.file)] : [],
       seller: req.user._id,
       status: "approved",
     });
@@ -106,6 +107,14 @@ export const updateBook = async (req, res) => {
     if (!book) return res.status(404).json({ message: "Book not found" });
 
     Object.assign(book, req.body);
+
+    // Upload a replacement image when the seller provides one.
+    // Multer uses memoryStorage, so req.file.buffer is sent to Cloudinary.
+    if (req.file) {
+      const imageUrl = await uploadImage(req.file);
+      book.images = [imageUrl];
+    }
+
     // Do not allow a seller edit to hide a previously published listing.
     book.status = "approved";
 
