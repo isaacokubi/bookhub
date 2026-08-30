@@ -3,11 +3,23 @@ import { getProfile } from "../api/authApi";
 
 const AuthContext = createContext();
 
+// Keep legacy "customer" accounts compatible with the canonical "buyer" role.
+export const normalizeRole = (value) => {
+  const role = String(value || "").trim().toLowerCase();
+  if (role === "customer" || role === "user") return "buyer";
+  return role || "buyer";
+};
+
+const normalizeUser = (value) => {
+  if (!value) return null;
+  return { ...value, role: normalizeRole(value.role) };
+};
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => {
     try {
       const stored = localStorage.getItem("user");
-      return stored ? JSON.parse(stored) : null;
+      return normalizeUser(stored ? JSON.parse(stored) : null);
     } catch {
       localStorage.removeItem("user");
       return null;
@@ -29,10 +41,8 @@ export function AuthProvider({ children }) {
       }
 
       try {
-        // The JWT-backed profile is authoritative. This prevents a stale
-        // localStorage user/role from disagreeing with the authenticated API user.
         const profile = await getProfile();
-        const authenticatedUser = profile?.user || profile;
+        const authenticatedUser = normalizeUser(profile?.user || profile);
 
         if (!authenticatedUser?._id && !authenticatedUser?.id) {
           throw new Error("Invalid profile response");
@@ -59,9 +69,10 @@ export function AuthProvider({ children }) {
   }, []);
 
   const login = (data) => {
+    const normalized = normalizeUser(data?.user);
     localStorage.setItem("token", data.token);
-    localStorage.setItem("user", JSON.stringify(data.user));
-    setUser(data.user);
+    localStorage.setItem("user", JSON.stringify(normalized));
+    setUser(normalized);
   };
 
   const logout = () => {
