@@ -66,10 +66,7 @@ export const getPublicSellerStore = async (req, res) => {
 };
 
 // CREATE BOOK
-// Seller listings are published immediately. The public marketplace only
-// exposes approved listings, so keeping the status explicit here prevents
-// seller-created books from silently remaining in the schema's "pending"
-// default and becoming invisible to buyers.
+// Seller listings are published immediately and explicitly marked approved.
 export const createBook = async (req, res) => {
   try {
     const book = await Book.create({
@@ -107,7 +104,11 @@ export const updateBook = async (req, res) => {
   try {
     const book = await Book.findOne({ _id: req.params.id, seller: req.user._id });
     if (!book) return res.status(404).json({ message: "Book not found" });
+
     Object.assign(book, req.body);
+    // Do not allow a seller edit to hide a previously published listing.
+    book.status = "approved";
+
     await book.save();
     res.json(book);
   } catch (error) {
