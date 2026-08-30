@@ -1,636 +1,149 @@
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useState,
-} from "react";
-
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { useAuth } from "./AuthContext";
-
-import {
-  getCart,
-  addToCart as addToCartApi,
-  removeFromCart as removeFromCartApi,
-  clearCart as clearCartApi,
-} from "../api/cartApi";
-
-
+import { getBook } from "../api/bookApi";
+import { getCart, addToCart as addToCartApi, removeFromCart as removeFromCartApi, clearCart as clearCartApi } from "../api/cartApi";
 
 const CartContext = createContext();
-
-
-
-
-
-export function CartProvider({ children }) {
-
-
-  const { user } = useAuth();
-
-
-
-  const emptyCart = {
-
-    books: [],
-
-    total: 0,
-
-  };
-
-
-
-  const [cart, setCart] = useState(emptyCart);
-
-
-
-  const [loading, setLoading] = useState(false);
-
-
-
-
-
-
-
-
-
-  /*
-  |--------------------------------------------------------------------------
-  | NORMALIZE CART RESPONSE
-  |--------------------------------------------------------------------------
-  |
-  | Converts every possible format into:
-  |
-  | {
-  |   books: [],
-  |   total: 0
-  | }
-  |
-  |--------------------------------------------------------------------------
-  */
-
-
-  const normalizeCart = (data) => {
-
-
-    if (!data) {
-
-      return emptyCart;
-
-    }
-
-
-
-
-
-    // If cart is directly an array
-    if (Array.isArray(data)) {
-
-
-      return {
-
-        books: data,
-
-        total: 0,
-
-      };
-
-
-    }
-
-
-
-
-
-    return {
-
-
-      ...data,
-
-
-
-      books:
-
-        data.books ||
-
-        data.items ||
-
-        [],
-
-
-
-      total:
-
-        Number(data.total) ||
-
-        0,
-
-
-    };
-
-
-  };
-
-
-
-
-
-
-
-
-
-  /*
-  |--------------------------------------------------------------------------
-  | SAVE CART
-  |--------------------------------------------------------------------------
-  */
-
-
-  const saveCart = (cartData) => {
-
-
-    const normalized = normalizeCart(cartData);
-
-
-
-    setCart(normalized);
-
-
-
-    localStorage.setItem(
-
-      "cart",
-
-      JSON.stringify(normalized)
-
-    );
-
-
-
-  };
-
-
-
-
-
-
-
-
-
-  /*
-  |--------------------------------------------------------------------------
-  | LOAD CART
-  |--------------------------------------------------------------------------
-  */
-
-
-  const loadCart = async () => {
-
-
-
-    try {
-
-
-      setLoading(true);
-
-
-
-
-
-      // Logged out user
-      if (!user) {
-
-
-        const savedCart = JSON.parse(
-
-          localStorage.getItem("cart")
-
-        );
-
-
-
-        saveCart(savedCart);
-
-
-
-        return;
-
-
-      }
-
-
-
-
-
-
-
-      // Logged in user
-      const response = await getCart();
-
-
-
-      saveCart(response);
-
-
-
-
-
-    } catch (error) {
-
-
-      console.error(
-
-        "Failed to load cart:",
-
-        error
-
-      );
-
-
-
-
-
-      // fallback to local storage
-
-      const savedCart = JSON.parse(
-
-        localStorage.getItem("cart")
-
-      );
-
-
-
-      saveCart(savedCart);
-
-
-
-
-
-    } finally {
-
-
-      setLoading(false);
-
-
-    }
-
-
-  };
-
-
-
-
-
-
-
-
-
-  /*
-  |--------------------------------------------------------------------------
-  | RELOAD CART WHEN USER CHANGES
-  |--------------------------------------------------------------------------
-  */
-
-
-  useEffect(() => {
-
-
-    loadCart();
-
-
-
-  }, [user]);
-
-
-
-
-
-
-
-
-
-  /*
-  |--------------------------------------------------------------------------
-  | ADD TO CART
-  |--------------------------------------------------------------------------
-  */
-
-
-  const addBookToCart = async (bookId) => {
-
-
-    try {
-
-
-      const response = await addToCartApi(bookId);
-
-
-
-      saveCart(response);
-
-
-
-
-    } catch (error) {
-
-
-      console.error(
-
-        "Failed to add cart item:",
-
-        error
-
-      );
-
-
-    }
-
-
-  };
-
-
-
-
-
-
-
-
-
-  /*
-  |--------------------------------------------------------------------------
-  | REMOVE FROM CART
-  |--------------------------------------------------------------------------
-  */
-
-
-  const removeBookFromCart = async (bookId) => {
-
-
-    try {
-
-
-      const response = await removeFromCartApi(bookId);
-
-
-
-      saveCart(response);
-
-
-
-
-    } catch (error) {
-
-
-      console.error(
-
-        "Failed to remove cart item:",
-
-        error
-
-      );
-
-
-    }
-
-
-  };
-
-
-
-
-
-
-
-
-
-  /*
-  |--------------------------------------------------------------------------
-  | CLEAR CART
-  |--------------------------------------------------------------------------
-  */
-
-
-  const clearCart = async () => {
-
-
-    try {
-
-
-      await clearCartApi();
-
-
-
-      setCart(emptyCart);
-
-
-
-      localStorage.removeItem(
-
-        "cart"
-
-      );
-
-
-
-    } catch (error) {
-
-
-      console.error(
-
-        "Failed to clear cart:",
-
-        error
-
-      );
-
-
-    }
-
-
-  };
-
-
-
-
-
-
-
-
-
-  /*
-  |--------------------------------------------------------------------------
-  | CART COUNT
-  |--------------------------------------------------------------------------
-  */
-
-
-  const cartCount =
-
-    cart?.books?.length || 0;
-
-
-
-
-
-
-
-
-
-  /*
-  |--------------------------------------------------------------------------
-  | CART TOTAL
-  |--------------------------------------------------------------------------
-  */
-
-
-  const cartTotal = cart?.books?.reduce(
-
-
-    (sum, item) => {
-
-
-
-      const price = Number(
-
-        item.price ||
-
-        item.book?.price ||
-
-        0
-
-      );
-
-
-
-      const quantity = Number(
-
-        item.quantity ||
-
-        1
-
-      );
-
-
-
-      return sum + (price * quantity);
-
-
-
-    },
-
-
-
-    0
-
-
-  );
-
-
-
-
-
-
-
-
-
-  return (
-
-
-    <CartContext.Provider
-
-
-
-      value={{
-
-
-        cart,
-
-
-
-        cartCount,
-
-
-
-        cartTotal,
-
-
-
-        loading,
-
-
-
-        loadCart,
-
-
-
-        addToCart:
-
-          addBookToCart,
-
-
-
-        removeFromCart:
-
-          removeBookFromCart,
-
-
-
-        clearCart,
-
-
-
-        setCart:
-
-          saveCart,
-
-
-      }}
-
-
-
-    >
-
-
-      {children}
-
-
-    </CartContext.Provider>
-
-
-  );
-
-
+const STORAGE_KEY = "bookhub_guest_cart";
+const emptyCart = { books: [], total: 0 };
+
+const getId = (item) => item?._id || item?.id || item?.bookId || item?.book?._id || item?.book?.id;
+const getPrice = (item) => Number(item?.price ?? item?.book?.price ?? 0);
+
+function normalize(data) {
+  const books = Array.isArray(data) ? data : data?.books || data?.items || [];
+  return { books, total: Number(data?.total) || books.reduce((sum, item) => sum + getPrice(item) * Number(item?.quantity || 1), 0) };
 }
 
+function readGuestCart() {
+  try {
+    const value = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
+    return normalize(value || emptyCart);
+  } catch {
+    return emptyCart;
+  }
+}
 
+function writeGuestCart(cart) {
+  const normalized = normalize(cart);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(normalized));
+  return normalized;
+}
 
+export function CartProvider({ children }) {
+  const { user } = useAuth();
+  const [cart, setCart] = useState(emptyCart);
+  const [loading, setLoading] = useState(false);
 
+  const save = (data, persistGuest = !user) => {
+    const normalized = normalize(data);
+    setCart(normalized);
+    if (persistGuest) writeGuestCart(normalized);
+    return normalized;
+  };
 
+  useEffect(() => {
+    let active = true;
+    async function load() {
+      setLoading(true);
+      const guest = readGuestCart();
+      try {
+        if (!user) {
+          if (active) save(guest, true);
+          return;
+        }
 
+        const response = await getCart();
+        let serverCart = normalize(response);
 
+        // Preserve items added before login. Add them to the authenticated cart once.
+        if (guest.books.length) {
+          for (const item of guest.books) {
+            const id = getId(item);
+            if (!id) continue;
+            try {
+              const result = await addToCartApi(id);
+              serverCart = normalize(result);
+            } catch (mergeError) {
+              console.warn("Could not merge guest cart item:", id, mergeError);
+            }
+          }
+          localStorage.removeItem(STORAGE_KEY);
+        }
 
+        if (active) save(serverCart, false);
+      } catch (error) {
+        console.error("Failed to load cart:", error);
+        if (active) save(guest, true);
+      } finally {
+        if (active) setLoading(false);
+      }
+    }
+    load();
+    return () => { active = false; };
+  }, [user]);
+
+  const addBookToCart = async (bookOrId) => {
+    const id = getId(bookOrId) || bookOrId;
+    if (!id) throw new Error("Invalid book");
+
+    if (user) {
+      const response = await addToCartApi(id);
+      save(response, false);
+      return response;
+    }
+
+    let book = typeof bookOrId === "object" ? bookOrId : null;
+    if (!book) {
+      const response = await getBook(id);
+      book = response?.data?.book || response?.data?.data?.book || response?.data?.data || response?.data;
+    }
+
+    const current = readGuestCart();
+    const index = current.books.findIndex((item) => getId(item) === id);
+    const books = [...current.books];
+    if (index >= 0) {
+      books[index] = { ...books[index], quantity: Number(books[index].quantity || 1) + 1 };
+    } else {
+      books.push({ ...book, bookId: id, quantity: 1 });
+    }
+    return save(writeGuestCart({ books }));
+  };
+
+  const removeBookFromCart = async (bookId) => {
+    if (user) {
+      const response = await removeFromCartApi(bookId);
+      save(response, false);
+      return response;
+    }
+    const books = readGuestCart().books.filter((item) => getId(item) !== bookId);
+    return save(writeGuestCart({ books }));
+  };
+
+  const clearCart = async () => {
+    if (user) await clearCartApi();
+    localStorage.removeItem(STORAGE_KEY);
+    setCart(emptyCart);
+  };
+
+  const loadCart = async () => {
+    if (!user) return save(readGuestCart(), true);
+    const response = await getCart();
+    return save(response, false);
+  };
+
+  const cartCount = useMemo(() => cart.books.reduce((sum, item) => sum + Number(item?.quantity || 1), 0), [cart.books]);
+  const cartTotal = useMemo(() => cart.books.reduce((sum, item) => sum + getPrice(item) * Number(item?.quantity || 1), 0), [cart.books]);
+
+  return (
+    <CartContext.Provider value={{ cart, cartCount, cartTotal, loading, loadCart, addToCart: addBookToCart, removeFromCart: removeBookFromCart, clearCart, setCart: (value) => save(value, !user) }}>
+      {children}
+    </CartContext.Provider>
+  );
+}
 
 export function useCart() {
-
-
   const context = useContext(CartContext);
-
-
-
-  if (!context) {
-
-
-    throw new Error(
-
-      "useCart must be used inside CartProvider"
-
-    );
-
-
-  }
-
-
-
+  if (!context) throw new Error("useCart must be used inside CartProvider");
   return context;
-
-
 }
