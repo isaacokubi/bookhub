@@ -92,11 +92,19 @@ export const getOrders = async (req, res) => {
       if (!latestPaymentByOrder.has(key)) latestPaymentByOrder.set(key, payment);
     }
 
-    const result = orders.map((order) => ({
-      ...order,
-      payment: latestPaymentByOrder.get(String(order._id)) || null,
-      canPay: order.paymentStatus !== "Paid" && order.status !== "Completed" && order.status !== "Cancelled",
-    }));
+    const result = orders.map((order) => {
+      const payment = latestPaymentByOrder.get(String(order._id)) || null;
+      const canPay =
+        order.paymentStatus === "Failed" &&
+        order.status !== "Completed" &&
+        order.status !== "Cancelled";
+
+      return {
+        ...order,
+        payment,
+        canPay,
+      };
+    });
 
     return res.json(result);
   } catch (error) {
