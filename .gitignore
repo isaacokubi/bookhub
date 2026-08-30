@@ -44,3 +44,6 @@ uploads/
 
 # Cache
 .cache/
+
+# Local development/test artifacts
+*.local
