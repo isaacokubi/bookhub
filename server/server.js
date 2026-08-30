@@ -22,6 +22,7 @@ import sellerRoutes from "./routes/sellerRoutes.js";
 import categoryRoutes from "./routes/categoryRoutes.js";
 import customerDashboardRoutes from "./routes/customerDashboardRoutes.js";
 import { approveExistingSellerBooks } from "./scripts/approveExistingSellerBooks.js";
+import { expireStalePendingPayments, getPaymentTimeoutMs } from "./services/paymentService.js";
 import sanitize from "./middleware/sanitize.js";
 import { securityMiddleware } from "./middleware/security.js";
 import errorHandler from "./middleware/errorHandler.js";
@@ -94,10 +95,21 @@ const startServer = async () => {
   // changes pending books owned by active seller accounts; rejected listings
   // remain untouched for moderation/audit purposes.
   await approveExistingSellerBooks();
+  await expireStalePendingPayments();
+
+  // Keep abandoned M-Pesa checkouts from remaining Pending forever. A late
+  // successful callback is still accepted and upgrades the order to Paid.
+  const paymentExpiryTimer = setInterval(() => {
+    expireStalePendingPayments().catch((error) => {
+      console.error("Payment expiry job failed:", error);
+    });
+  }, Math.min(getPaymentTimeoutMs(), 60_000));
+  paymentExpiryTimer.unref?.();
 
   httpServer.listen(port, () => {
     console.log(`BookHub API running on port ${port}`);
     console.log(`Allowed frontend origins: ${allowedOrigins.join(", ")}`);
+    console.log(`M-Pesa pending timeout: ${Math.round(getPaymentTimeoutMs() / 60000)} minute(s)`);
   });
 };
 
