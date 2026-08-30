@@ -1,5 +1,7 @@
 import Order from "../models/Order.js";
 import Book from "../models/Book.js";
+import Payment from "../models/Payment.js";
+import { expireStalePendingPayments } from "../services/paymentService.js";
 
 const toPositiveInt = (value, fallback = 1) => {
   const number = Number(value);
@@ -24,27 +26,17 @@ export const createOrder = async (req, res) => {
       }
 
       const book = await Book.findById(bookId).select("price seller quantity status");
-      if (!book) {
-        return res.status(404).json({ message: "Book not found" });
-      }
-
+      if (!book) return res.status(404).json({ message: "Book not found" });
       if (book.status !== "approved") {
         return res.status(400).json({ message: "One or more selected books are not available for purchase" });
       }
 
       const quantity = toPositiveInt(item?.quantity);
-      if (quantity > book.quantity) {
-        return res.status(400).json({ message: `Insufficient stock for the selected book` });
-      }
+      if (quantity > book.quantity) return res.status(400).json({ message: "Insufficient stock for the selected book" });
 
       const price = Number(book.price);
       calculatedTotal += price * quantity;
-      orderBooks.push({
-        book: book._id,
-        seller: book.seller,
-        price,
-        quantity,
-      });
+      orderBooks.push({ book: book._id, seller: book.seller, price, quantity });
     }
 
     if (!Number.isFinite(calculatedTotal) || calculatedTotal <= 0) {
@@ -78,12 +70,35 @@ export const createOrder = async (req, res) => {
 
 export const getOrders = async (req, res) => {
   try {
+    await expireStalePendingPayments();
+
     const orders = await Order.find({ user: req.user._id })
       .populate("books.book", "title author price images")
       .populate("books.seller", "name email")
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .lean();
 
-    return res.json(orders);
+    const orderIds = orders.map((order) => order._id);
+    const payments = orderIds.length
+      ? await Payment.find({ order: { $in: orderIds } })
+          .select("order amount phone status resultCode resultDesc mpesaReceiptNumber createdAt updatedAt")
+          .sort({ createdAt: -1 })
+          .lean()
+      : [];
+
+    const latestPaymentByOrder = new Map();
+    for (const payment of payments) {
+      const key = String(payment.order);
+      if (!latestPaymentByOrder.has(key)) latestPaymentByOrder.set(key, payment);
+    }
+
+    const result = orders.map((order) => ({
+      ...order,
+      payment: latestPaymentByOrder.get(String(order._id)) || null,
+      canPay: order.paymentStatus !== "Paid" && order.status !== "Completed" && order.status !== "Cancelled",
+    }));
+
+    return res.json(result);
   } catch (error) {
     console.error("Get orders error:", error);
     return res.status(500).json({ message: "Unable to load orders" });
