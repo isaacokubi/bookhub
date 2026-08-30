@@ -1,94 +1,28 @@
 import express from "express";
 
-// Controllers
 import {
   createBook,
   getSellerBooks,
   updateBook,
   deleteBook,
+  getPublicSellers,
+  getPublicSellerStore,
 } from "../controllers/sellerController.js";
-
 import { getSellerOrders } from "../controllers/sellerOrderController.js";
-
-// Middleware
 import auth from "../middleware/auth.js";
 import sellerOnly from "../middleware/sellerMiddleware.js";
 import upload from "../middleware/upload.js";
 
 const router = express.Router();
 
-// =================================
-// CREATE BOOK LISTING
-// =================================
+// Public buyer-facing seller discovery and storefronts.
+router.get("/public", getPublicSellers);
+router.get("/public/:id/books", getPublicSellerStore);
 
-router.post(
-  "/books",
-
-  auth,
-
-  sellerOnly,
-
-  upload.single("image"),
-
-  createBook,
-);
-
-// =================================
-// GET SELLER BOOKS
-// =================================
-
-router.get(
-  "/books",
-
-  auth,
-
-  sellerOnly,
-
-  getSellerBooks,
-);
-
-// =================================
-// UPDATE BOOK
-// =================================
-
-router.put(
-  "/books/:id",
-
-  auth,
-
-  sellerOnly,
-
-  upload.single("image"),
-
-  updateBook,
-);
-
-// =================================
-// DELETE BOOK
-// =================================
-
-router.delete(
-  "/books/:id",
-
-  auth,
-
-  sellerOnly,
-
-  deleteBook,
-);
-
-// =================================
-// SELLER ORDERS
-// =================================
-
-router.get(
-  "/orders",
-
-  auth,
-
-  sellerOnly,
-
-  getSellerOrders,
-);
+router.post("/books", auth, sellerOnly, upload.single("image"), createBook);
+router.get("/books", auth, sellerOnly, getSellerBooks);
+router.put("/books/:id", auth, sellerOnly, upload.single("image"), updateBook);
+router.delete("/books/:id", auth, sellerOnly, deleteBook);
+router.get("/orders", auth, sellerOnly, getSellerOrders);
 
 export default router;
