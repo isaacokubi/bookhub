@@ -7,19 +7,28 @@ export const getCustomerDashboard = async (req, res) => {
   try {
     await expireStalePendingPayments();
 
-    const [orders, favorites] = await Promise.all([
-      Order.find({ user: req.user._id })
-        .populate("books.book", "title author price images")
-        .sort({ createdAt: -1 })
-        .limit(10)
-        .lean(),
-      Favorite.countDocuments({ user: req.user._id }),
-    ]);
+    const [orders, favorites, orderCount, paidOrderCount, pendingPaymentCount, failedPaymentCount, spentResult] =
+      await Promise.all([
+        Order.find({ user: req.user._id })
+          .populate("books.book", "title author price images")
+          .sort({ createdAt: -1 })
+          .limit(10)
+          .lean(),
+        Favorite.countDocuments({ user: req.user._id }),
+        Order.countDocuments({ user: req.user._id }),
+        Order.countDocuments({ user: req.user._id, paymentStatus: "Paid" }),
+        Order.countDocuments({ user: req.user._id, paymentStatus: "Pending" }),
+        Order.countDocuments({ user: req.user._id, paymentStatus: "Failed" }),
+        Order.aggregate([
+          { $match: { user: req.user._id, paymentStatus: "Paid" } },
+          { $group: { _id: null, total: { $sum: "$total" } } },
+        ]),
+      ]);
 
     const orderIds = orders.map((order) => order._id);
     const payments = orderIds.length
       ? await Payment.find({ order: { $in: orderIds } })
-          .select("order status resultDesc createdAt")
+          .select("order status resultDesc createdAt phone")
           .sort({ createdAt: -1 })
           .lean()
       : [];
@@ -33,21 +42,26 @@ export const getCustomerDashboard = async (req, res) => {
     const enrichedOrders = orders.map((order) => ({
       ...order,
       payment: latestPaymentByOrder.get(String(order._id)) || null,
-      canPay: order.paymentStatus !== "Paid" && order.status !== "Completed" && order.status !== "Cancelled",
+      canPay:
+        order.paymentStatus !== "Paid" &&
+        order.status !== "Completed" &&
+        order.status !== "Cancelled",
     }));
 
-    const paidOrders = orders.filter((order) => order.paymentStatus === "Paid");
-    const pendingPayments = orders.filter((order) => order.paymentStatus === "Pending");
-    const failedPayments = orders.filter((order) => order.paymentStatus === "Failed");
-    const spent = paidOrders.reduce((sum, order) => sum + Number(order.total || 0), 0);
+    const spent = Number(spentResult[0]?.total || 0);
+    const inProgress = await Order.countDocuments({
+      user: req.user._id,
+      paymentStatus: "Paid",
+      status: "Processing",
+    });
 
     return res.json({
       stats: {
-        orders: orders.length,
-        paidOrders: paidOrders.length,
-        pendingPayments: pendingPayments.length,
-        failedPayments: failedPayments.length,
-        inProgress: paidOrders.filter((order) => order.status === "Processing").length,
+        orders: orderCount,
+        paidOrders: paidOrderCount,
+        pendingPayments: pendingPaymentCount,
+        failedPayments: failedPaymentCount,
+        inProgress,
         spent,
         favorites,
       },
