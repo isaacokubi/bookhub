@@ -97,13 +97,16 @@ const startServer = async () => {
   await approveExistingSellerBooks();
   await expireStalePendingPayments();
 
-  // Keep abandoned M-Pesa checkouts from remaining Pending forever. A late
-  // successful callback is still accepted and upgrades the order to Paid.
+  // Expire abandoned M-Pesa checkouts continuously. The timeout itself is
+  // hard-capped at five minutes in paymentService.js; checking every 10
+  // seconds means an abandoned request is normally converted to Failed within
+  // a few seconds of reaching the five-minute limit, rather than waiting for
+  // a one-minute polling window.
   const paymentExpiryTimer = setInterval(() => {
     expireStalePendingPayments().catch((error) => {
       console.error("Payment expiry job failed:", error);
     });
-  }, Math.min(getPaymentTimeoutMs(), 60_000));
+  }, 10_000);
   paymentExpiryTimer.unref?.();
 
   httpServer.listen(port, () => {
