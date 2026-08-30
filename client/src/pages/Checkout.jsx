@@ -69,11 +69,21 @@ export default function Checkout() {
       await initiateMpesa({ phone: formattedPhone, orderId });
       toast.success("M-Pesa prompt sent. Enter your PIN on your phone.");
     } catch (error) {
+      const status = error.response?.status;
+      const message = error.response?.data?.message;
       console.error("PAYMENT ERROR:", error.response?.data || error.message);
-      if ([401, 403].includes(error.response?.status)) {
-        toast.info("Please log in as a buyer to complete your purchase.");
+
+      if (status === 401) {
+        // 401 means the JWT is missing/invalid/expired. Do not mislabel a
+        // valid buyer as the wrong role when the real problem is the session.
+        toast.info("Your session has expired. Please log in again.");
         goToLogin();
-      } else toast.error(error.response?.data?.message || "Payment could not be started. Please try again.");
+      } else if (status === 403) {
+        // 403 is normally an authorization/ownership problem, not a login problem.
+        toast.error(message || "You are not authorized to make this payment.");
+      } else {
+        toast.error(message || "Payment could not be started. Please try again.");
+      }
     } finally {
       setLoading(false);
     }
