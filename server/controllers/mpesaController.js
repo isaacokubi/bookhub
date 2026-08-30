@@ -115,8 +115,7 @@ export const mpesaCallback = async (req, res) => {
         }
       });
 
-     
-     payment.mpesaReceiptNumber = receiptNumber;
+      payment.mpesaReceiptNumber = receiptNumber;
 
       // SAVE PAYMENT FIRST
 
