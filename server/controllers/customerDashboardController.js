@@ -7,7 +7,7 @@ export const getCustomerDashboard = async (req, res) => {
   try {
     await expireStalePendingPayments();
 
-    const [orders, favorites, orderCount, paidOrderCount, pendingPaymentCount, failedPaymentCount, spentResult] =
+    const [orders, favorites, orderCount, paidOrderCount, pendingPaymentCount, failedPaymentCount, spentResult, inProgress] =
       await Promise.all([
         Order.find({ user: req.user._id })
           .populate("books.book", "title author price images")
@@ -23,6 +23,11 @@ export const getCustomerDashboard = async (req, res) => {
           { $match: { user: req.user._id, paymentStatus: "Paid" } },
           { $group: { _id: null, total: { $sum: "$total" } } },
         ]),
+        Order.countDocuments({
+          user: req.user._id,
+          paymentStatus: "Paid",
+          status: "Processing",
+        }),
       ]);
 
     const orderIds = orders.map((order) => order._id);
@@ -43,17 +48,10 @@ export const getCustomerDashboard = async (req, res) => {
       ...order,
       payment: latestPaymentByOrder.get(String(order._id)) || null,
       canPay:
-        order.paymentStatus !== "Paid" &&
+        order.paymentStatus === "Failed" &&
         order.status !== "Completed" &&
         order.status !== "Cancelled",
     }));
-
-    const spent = Number(spentResult[0]?.total || 0);
-    const inProgress = await Order.countDocuments({
-      user: req.user._id,
-      paymentStatus: "Paid",
-      status: "Processing",
-    });
 
     return res.json({
       stats: {
@@ -62,7 +60,7 @@ export const getCustomerDashboard = async (req, res) => {
         pendingPayments: pendingPaymentCount,
         failedPayments: failedPaymentCount,
         inProgress,
-        spent,
+        spent: Number(spentResult[0]?.total || 0),
         favorites,
       },
       orders: enrichedOrders,
