@@ -1,18 +1,20 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { getProfile } from "../api/authApi";
 
-const AuthContext = createContext();
+const AuthContext = createContext(null);
 
-// Keep legacy "customer" accounts compatible with the canonical "buyer" role.
 export const normalizeRole = (value) => {
   const role = String(value || "").trim().toLowerCase();
-  if (role === "customer" || role === "user") return "buyer";
+  if (["customer", "user", "buyer"].includes(role)) return "buyer";
+  if (["seller_admin", "seller"].includes(role)) return "seller";
+  if (["superadmin", "administrator"].includes(role)) return "admin";
   return role || "buyer";
 };
 
-const normalizeUser = (value) => {
+export const normalizeUser = (value) => {
   if (!value) return null;
-  return { ...value, role: normalizeRole(value.role) };
+  const source = value.user && typeof value.user === "object" ? value.user : value;
+  return { ...source, role: normalizeRole(source.role) };
 };
 
 export function AuthProvider({ children }) {
@@ -29,25 +31,16 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     let mounted = true;
-
     const restoreSession = async () => {
       const token = localStorage.getItem("token");
       if (!token) {
-        if (mounted) {
-          setUser(null);
-          setAuthLoading(false);
-        }
+        if (mounted) { setUser(null); setAuthLoading(false); }
         return;
       }
-
       try {
         const profile = await getProfile();
-        const authenticatedUser = normalizeUser(profile?.user || profile);
-
-        if (!authenticatedUser?._id && !authenticatedUser?.id) {
-          throw new Error("Invalid profile response");
-        }
-
+        const authenticatedUser = normalizeUser(profile);
+        if (!authenticatedUser?._id && !authenticatedUser?.id) throw new Error("Invalid profile response");
         if (mounted) {
           setUser(authenticatedUser);
           localStorage.setItem("user", JSON.stringify(authenticatedUser));
@@ -61,18 +54,17 @@ export function AuthProvider({ children }) {
         if (mounted) setAuthLoading(false);
       }
     };
-
     restoreSession();
-    return () => {
-      mounted = false;
-    };
+    return () => { mounted = false; };
   }, []);
 
   const login = (data) => {
-    const normalized = normalizeUser(data?.user);
+    const normalized = normalizeUser(data?.user || data);
+    if (!data?.token) throw new Error("Login response did not contain a token");
     localStorage.setItem("token", data.token);
     localStorage.setItem("user", JSON.stringify(normalized));
     setUser(normalized);
+    setAuthLoading(false);
   };
 
   const logout = () => {
@@ -81,11 +73,7 @@ export function AuthProvider({ children }) {
     setUser(null);
   };
 
-  return (
-    <AuthContext.Provider value={{ user, login, logout, authLoading }}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={{ user, login, logout, authLoading }}>{children}</AuthContext.Provider>;
 }
 
 export const useAuth = () => useContext(AuthContext);
