@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { getBooks } from "../api/bookApi";
 import BookCard from "../components/books/BookCard";
@@ -26,15 +26,13 @@ export default function Books() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [searching, setSearching] = useState(false);
+  const requestId = useRef(0);
 
-  // Keep the UI synchronized when a user navigates with browser back/forward
-  // or opens a filtered marketplace URL directly.
   useEffect(() => {
     setFilters(getInitialFilters(searchParams));
   }, [searchParams]);
 
-  // Search as the user types. A short debounce prevents an API request for
-  // every single keystroke while still making the marketplace feel live.
+  // Keep filters shareable/bookmarkable without making the search feel slow.
   useEffect(() => {
     const timer = window.setTimeout(() => {
       const nextParams = {};
@@ -44,18 +42,18 @@ export default function Books() {
       if (filters.condition) nextParams.condition = filters.condition;
       if (filters.sort) nextParams.sort = filters.sort;
 
-      const current = searchParams.toString();
       const next = new URLSearchParams(nextParams).toString();
-      if (current !== next) {
+      if (searchParams.toString() !== next) {
         setSearchParams(nextParams, { replace: true });
       }
-    }, filters.search === searchParams.get("search") ? 0 : 300);
+    }, 250);
 
     return () => window.clearTimeout(timer);
   }, [filters.search, filters.category, filters.condition, filters.sort, searchParams, setSearchParams]);
 
   useEffect(() => {
     let active = true;
+    const currentRequest = ++requestId.current;
 
     const loadBooks = async () => {
       try {
@@ -79,15 +77,16 @@ export default function Books() {
               ? payload.data
               : [];
 
-        if (active) setBooks(data);
+        // Ignore stale responses when a user types quickly or changes filters.
+        if (active && currentRequest === requestId.current) setBooks(data);
       } catch (requestError) {
         console.error("Failed loading books:", requestError);
-        if (active) {
+        if (active && currentRequest === requestId.current) {
           setBooks([]);
           setError("We couldn't load the marketplace right now. Please try again.");
         }
       } finally {
-        if (active) {
+        if (active && currentRequest === requestId.current) {
           setLoading(false);
           setSearching(false);
         }
@@ -120,24 +119,34 @@ export default function Books() {
   return (
     <main className="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-white">
       <section className="border-b border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
-        <div className="mx-auto max-w-7xl px-5 py-10 sm:px-8 lg:px-10 lg:py-14">
-          <div className="max-w-3xl">
-            <span className="inline-flex items-center rounded-full bg-blue-50 px-3 py-1 text-xs font-bold uppercase tracking-widest text-blue-700 dark:bg-blue-950/50 dark:text-blue-300">
-              🇰🇪 BookHub marketplace
-            </span>
-            <h1 className="mt-4 text-3xl font-black tracking-tight sm:text-4xl lg:text-5xl">
-              Find your next great read
-            </h1>
-            <p className="mt-4 text-base leading-7 text-slate-600 dark:text-slate-300 sm:text-lg">
-              Search thousands of listings from sellers across Kenya. Compare condition, price and seller before you buy.
-            </p>
+        <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8 lg:py-14">
+          <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
+            <div className="max-w-3xl">
+              <span className="inline-flex items-center rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-xs font-bold uppercase tracking-[0.16em] text-blue-700 dark:border-blue-900 dark:bg-blue-950/50 dark:text-blue-300">
+                🇰🇪 Kenya's book marketplace
+              </span>
+              <h1 className="mt-4 text-3xl font-black tracking-tight text-slate-950 sm:text-4xl lg:text-5xl dark:text-white">
+                Find your next great read
+              </h1>
+              <p className="mt-4 max-w-2xl text-base leading-7 text-slate-600 sm:text-lg dark:text-slate-300">
+                Search listings from trusted sellers across Kenya. Compare titles, condition and price before you buy.
+              </p>
+            </div>
+            <Link
+              to="/sellers"
+              className="inline-flex w-fit items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 shadow-sm transition hover:border-blue-200 hover:text-blue-600 focus:outline-none focus:ring-4 focus:ring-blue-500/10 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+            >
+              Shop by seller <span aria-hidden="true">→</span>
+            </Link>
           </div>
 
           <div className="mt-8 rounded-2xl border border-slate-200 bg-slate-50 p-3 shadow-sm dark:border-slate-700 dark:bg-slate-800/70">
+            <label htmlFor="book-search" className="mb-2 block px-1 text-sm font-bold text-slate-700 dark:text-slate-200">
+              Search the marketplace
+            </label>
             <div className="flex flex-col gap-3 lg:flex-row">
-              <label className="relative flex-1">
-                <span className="sr-only">Search books</span>
-                <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-lg text-slate-400">⌕</span>
+              <div className="relative flex-1">
+                <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-lg text-slate-400" aria-hidden="true">⌕</span>
                 <input
                   id="book-search"
                   type="search"
@@ -146,27 +155,27 @@ export default function Books() {
                   onChange={handleChange}
                   placeholder="Search by title, author or ISBN..."
                   autoComplete="off"
-                  className="h-12 w-full rounded-xl border border-slate-200 bg-white pl-11 pr-12 text-sm font-medium outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-600 dark:bg-slate-900"
+                  className="h-12 w-full rounded-xl border border-slate-200 bg-white pl-11 pr-12 text-sm font-medium outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-600 dark:bg-slate-900 dark:text-white"
                 />
                 {searching && (
                   <span className="absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin rounded-full border-2 border-slate-300 border-t-blue-600" aria-label="Searching" />
                 )}
-              </label>
-              <div className="flex h-12 items-center rounded-xl bg-blue-50 px-4 text-sm font-bold text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 lg:min-w-32 lg:justify-center">
-                Live search
+              </div>
+              <div className="flex h-12 items-center justify-center rounded-xl bg-blue-600 px-5 text-sm font-bold text-white lg:min-w-32">
+                {searching ? "Searching…" : "Live search"}
               </div>
             </div>
 
             <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
-              <select name="category" value={filters.category} onChange={handleChange} aria-label="Category" className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium outline-none focus:border-blue-500 dark:border-slate-600 dark:bg-slate-900">
+              <select name="category" value={filters.category} onChange={handleChange} aria-label="Category" className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-600 dark:bg-slate-900 dark:text-white">
                 <option value="">All categories</option>
                 {CATEGORIES.map((category) => <option key={category} value={category}>{category}</option>)}
               </select>
-              <select name="condition" value={filters.condition} onChange={handleChange} aria-label="Condition" className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium outline-none focus:border-blue-500 dark:border-slate-600 dark:bg-slate-900">
+              <select name="condition" value={filters.condition} onChange={handleChange} aria-label="Condition" className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-600 dark:bg-slate-900 dark:text-white">
                 <option value="">All conditions</option>
                 {CONDITIONS.map((condition) => <option key={condition} value={condition}>{condition}</option>)}
               </select>
-              <select name="sort" value={filters.sort} onChange={handleChange} aria-label="Sort books" className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium outline-none focus:border-blue-500 dark:border-slate-600 dark:bg-slate-900">
+              <select name="sort" value={filters.sort} onChange={handleChange} aria-label="Sort books" className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-600 dark:bg-slate-900 dark:text-white">
                 {SORT_OPTIONS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
               </select>
             </div>
@@ -174,46 +183,46 @@ export default function Books() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-5 py-8 sm:px-8 lg:px-10 lg:py-10">
-        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
+        <div className="mb-6 flex flex-col gap-4 border-b border-slate-200 pb-5 sm:flex-row sm:items-end sm:justify-between dark:border-slate-800">
           <div>
-            <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">Marketplace</p>
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-blue-600 dark:text-blue-400">Marketplace</p>
             <h2 className="mt-1 text-2xl font-black tracking-tight">Books available</h2>
-            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-              {loading ? "Finding listings..." : `${books.length} ${books.length === 1 ? "listing" : "listings"} found`}
+            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400" aria-live="polite">
+              {loading ? "Finding listings…" : `${books.length} ${books.length === 1 ? "listing" : "listings"} found`}
               {activeSearch ? ` for “${activeSearch}”` : ""}
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
-            {activeFilterCount > 0 && (
-              <button type="button" onClick={clearFilters} className="rounded-lg px-3 py-2 text-sm font-bold text-slate-600 hover:bg-white hover:text-blue-600 dark:text-slate-300 dark:hover:bg-slate-900">
-                Clear filters
-              </button>
-            )}
-            <Link to="/sellers" className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 shadow-sm transition hover:border-blue-200 hover:text-blue-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200">
-              Shop by seller
-            </Link>
-          </div>
+          {activeFilterCount > 0 && (
+            <button type="button" onClick={clearFilters} className="w-fit rounded-lg px-3 py-2 text-sm font-bold text-slate-600 transition hover:bg-white hover:text-blue-600 dark:text-slate-300 dark:hover:bg-slate-900">
+              Clear filters
+            </button>
+          )}
         </div>
 
         {loading ? (
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {[1, 2, 3, 4, 5, 6, 7, 8].map((item) => <div key={item} className="h-[470px] animate-pulse rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900" />)}
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" aria-label="Loading books">
+            {[1, 2, 3, 4, 5, 6, 7, 8].map((item) => (
+              <div key={item} className="overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
+                <div className="aspect-[3/4] animate-pulse bg-slate-200 dark:bg-slate-800" />
+                <div className="space-y-3 p-5"><div className="h-5 animate-pulse rounded bg-slate-200 dark:bg-slate-800" /><div className="h-4 w-2/3 animate-pulse rounded bg-slate-200 dark:bg-slate-800" /><div className="h-10 animate-pulse rounded bg-slate-200 dark:bg-slate-800" /></div>
+              </div>
+            ))}
           </div>
         ) : error ? (
           <div className="rounded-2xl border border-red-200 bg-red-50 p-10 text-center dark:border-red-900 dark:bg-red-950/30">
-            <div className="text-4xl">⚠️</div>
+            <div className="text-4xl" aria-hidden="true">⚠️</div>
             <h2 className="mt-3 text-xl font-bold">Marketplace unavailable</h2>
             <p className="mt-2 text-sm text-red-700 dark:text-red-300">{error}</p>
-            <button type="button" onClick={() => setFilters((current) => ({ ...current }))} className="mt-5 rounded-xl bg-red-600 px-5 py-2.5 font-bold text-white hover:bg-red-700">Try again</button>
+            <button type="button" onClick={() => setFilters((current) => ({ ...current }))} className="mt-5 rounded-xl bg-red-600 px-5 py-2.5 font-bold text-white transition hover:bg-red-700">Try again</button>
           </div>
         ) : books.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-16 text-center dark:border-slate-700 dark:bg-slate-900">
-            <div className="text-5xl">📚</div>
+            <div className="text-5xl" aria-hidden="true">📚</div>
             <h2 className="mt-4 text-xl font-black">No books found</h2>
-            <p className="mx-auto mt-2 max-w-md text-sm text-slate-500 dark:text-slate-400">Try a different title, author, ISBN, category or condition.</p>
-            <button type="button" onClick={clearFilters} className="mt-5 rounded-xl bg-blue-600 px-5 py-3 font-bold text-white hover:bg-blue-700">Clear filters</button>
+            <p className="mx-auto mt-2 max-w-md text-sm text-slate-500 dark:text-slate-400">Try another title, author, ISBN, category or condition.</p>
+            <button type="button" onClick={clearFilters} className="mt-5 rounded-xl bg-blue-600 px-5 py-3 font-bold text-white transition hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-500/20">Clear filters</button>
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
