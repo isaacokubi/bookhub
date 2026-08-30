@@ -1,60 +1,27 @@
-import axios from "axios";
+import api from "./axios";
 
-const API_URL = "https://bookhub-1-d9b3.onrender.com/api";
+// All order requests use the shared API client so the configured
+// VITE_API_URL and current JWT are used consistently in development
+// and production.
 
-const API = axios.create({
-  baseURL: API_URL,
-});
-
-// Attach JWT token
-API.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem("token");
-
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-
-    return config;
-  },
-
-  (error) => {
-    return Promise.reject(error);
-  },
-);
-
-// CREATE ORDER
 export const createOrder = async (orderData) => {
-  try {
-    const response = await API.post("/orders", orderData);
-
-    console.log("Order API response:", response.data);
-
-    return response.data;
-  } catch (error) {
-    console.log("Create order error:", error.response?.data || error.message);
-
-    throw error;
-  }
+  const response = await api.post("/orders", orderData);
+  console.log("Order API response:", response.data);
+  return response.data;
 };
 
-// GET ORDERS
 export const getOrders = async () => {
-  const response = await API.get("/orders");
+  const response = await api.get("/orders");
   console.log("ORDERS API RESPONSE:", response.data);
   return response.data;
 };
 
-// GET SINGLE ORDER
 export const getOrderById = async (id) => {
-  const response = await API.get(`/orders/${id}`);
-
+  const response = await api.get(`/orders/${id}`);
   return response.data;
 };
 
-// CANCEL ORDER
 export const cancelOrder = async (id) => {
-  const response = await API.put(`/orders/${id}/cancel`);
-
+  const response = await api.put(`/orders/${id}/cancel`);
   return response.data;
 };
