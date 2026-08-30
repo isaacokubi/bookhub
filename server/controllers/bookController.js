@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import Book from "../models/Book.js";
 import Category from "../models/Category.js";
+import User from "../models/User.js";
 import { uploadImage } from "../services/cloudinaryService.js";
 
 export const createBook = async (req, res, next) => {
@@ -18,7 +19,7 @@ export const createBook = async (req, res, next) => {
 
 export const getBooks = async (req, res) => {
   try {
-    const { search, category, condition, minPrice, maxPrice, sort } = req.query;
+    const { search, category, condition, minPrice, maxPrice, sort, seller } = req.query;
     const filter = { status: "approved" };
 
     if (search?.trim()) {
@@ -36,11 +37,21 @@ export const getBooks = async (req, res) => {
         filter.category = value;
       } else {
         const safe = value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-        const categoryDoc = await Category.findOne({
-          name: { $regex: `^${safe}$`, $options: "i" },
-        }).select("_id");
+        const categoryDoc = await Category.findOne({ name: { $regex: `^${safe}$`, $options: "i" } }).select("_id");
         if (!categoryDoc) return res.json([]);
         filter.category = categoryDoc._id;
+      }
+    }
+
+    if (seller?.trim()) {
+      const value = seller.trim();
+      if (mongoose.Types.ObjectId.isValid(value)) {
+        filter.seller = value;
+      } else {
+        const safe = value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const sellerDoc = await User.findOne({ role: "seller", isActive: true, name: { $regex: safe, $options: "i" } }).select("_id");
+        if (!sellerDoc) return res.json([]);
+        filter.seller = sellerDoc._id;
       }
     }
 
@@ -54,7 +65,7 @@ export const getBooks = async (req, res) => {
 
     let query = Book.find(filter)
       .populate("category", "name")
-      .populate("seller", "name email");
+      .populate("seller", "name email avatar rating");
 
     if (sort === "lowest") query = query.sort("price");
     if (sort === "highest") query = query.sort("-price");
@@ -71,7 +82,7 @@ export const getBook = async (req, res) => {
   try {
     const book = await Book.findOne({ _id: req.params.id, status: "approved" })
       .populate("category", "name")
-      .populate("seller", "name email");
+      .populate("seller", "name email avatar rating");
     if (!book) return res.status(404).json({ message: "Book not found" });
     book.views = (book.views || 0) + 1;
     await book.save();
@@ -83,9 +94,7 @@ export const getBook = async (req, res) => {
 
 export const sellerBooks = async (req, res) => {
   try {
-    const books = await Book.find({ seller: req.user._id })
-      .populate("category", "name")
-      .sort("-createdAt");
+    const books = await Book.find({ seller: req.user._id }).populate("category", "name").sort("-createdAt");
     res.json(books);
   } catch (error) {
     res.status(500).json({ message: error.message });
