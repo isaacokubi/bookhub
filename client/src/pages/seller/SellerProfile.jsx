@@ -60,7 +60,7 @@ export default function SellerProfile() {
       localStorage.setItem("user", JSON.stringify(updatedUser));
       // Refresh the AuthContext user without changing the current token.
       const profile = await getProfile();
-      const refreshedUser = normalizeUser(profile);
+      const refreshedUser = normalizeUser(profile?.user || profile);
       localStorage.setItem("user", JSON.stringify(refreshedUser));
       // AuthContext exposes login for session state; preserve the existing token.
       login({ token: localStorage.getItem("token"), user: refreshedUser });

@@ -13,7 +13,7 @@ sellerProfileApi.interceptors.request.use((config) => {
 export const uploadSellerProfileImage = async (file) => {
   const formData = new FormData();
   formData.append("avatar", file);
-  const response = await sellerProfileApi.put("/sellers/profile/avatar", formData);
+  const response = await sellerProfileApi.put("/seller/profile/avatar", formData);
   return response.data;
 };
 
