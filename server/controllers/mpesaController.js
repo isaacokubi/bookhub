@@ -3,14 +3,24 @@ import Payment from "../models/Payment.js";
 import Order from "../models/Order.js";
 import { createNotification } from "../utils/createNotification.js";
 import { COMMISSION_RATE } from "../config/commission.js";
+import { expireStalePendingPayments, getPaymentTimeoutMs } from "../services/paymentService.js";
+
+const getPaymentState = (payment) => ({
+  status: payment?.status || "Failed",
+  resultDesc: payment?.resultDesc || "",
+  createdAt: payment?.createdAt || null,
+  checkoutRequestID: payment?.checkoutRequestID || null,
+});
 
 export const initiatePayment = async (req, res) => {
-  try {
-    const { phone, orderId } = req.body;
+  const { phone, orderId } = req.body || {};
 
+  try {
     if (!phone || !orderId) {
       return res.status(400).json({ message: "Phone and orderId are required" });
     }
+
+    await expireStalePendingPayments();
 
     const order = await Order.findById(orderId);
     if (!order) return res.status(404).json({ message: "Order not found" });
@@ -22,12 +32,39 @@ export const initiatePayment = async (req, res) => {
       return res.status(409).json({ message: "Order is already paid" });
     }
 
+    const activePayment = await Payment.findOne({
+      order: order._id,
+      status: "Pending",
+      createdAt: { $gte: new Date(Date.now() - getPaymentTimeoutMs()) },
+    }).sort({ createdAt: -1 });
+
+    if (activePayment) {
+      return res.status(409).json({
+        message: "A payment request is already active. Complete the M-Pesa prompt or wait for it to expire before trying again.",
+        payment: getPaymentState(activePayment),
+      });
+    }
+
     const amount = Number(order.total);
     if (!Number.isFinite(amount) || amount <= 0) {
       return res.status(400).json({ message: "Invalid order amount" });
     }
 
-    const response = await stkPush(phone, amount, orderId);
+    let response;
+    try {
+      response = await stkPush(phone, amount, orderId);
+    } catch (paymentError) {
+      order.paymentStatus = "Failed";
+      await order.save();
+      await Payment.create({
+        order: order._id,
+        amount,
+        phone,
+        status: "Failed",
+        resultDesc: paymentError.message || "M-Pesa payment initiation failed.",
+      });
+      throw paymentError;
+    }
 
     const payment = await Payment.create({
       order: order._id,
@@ -39,10 +76,45 @@ export const initiatePayment = async (req, res) => {
       rawResponse: response,
     });
 
-    return res.status(201).json({ message: "STK Push sent", payment });
+    order.paymentStatus = "Pending";
+    await order.save();
+
+    return res.status(201).json({
+      message: "STK Push sent",
+      payment: getPaymentState(payment),
+      expiresAt: new Date(payment.createdAt.getTime() + getPaymentTimeoutMs()),
+    });
   } catch (error) {
     console.error("STK PUSH ERROR:", error);
-    return res.status(500).json({ message: "Payment initiation failed" });
+    return res.status(500).json({
+      message: error.message || "Payment initiation failed. The order has been marked as failed and can be retried.",
+    });
+  }
+};
+
+export const getPaymentStatus = async (req, res) => {
+  try {
+    await expireStalePendingPayments();
+
+    const order = await Order.findById(req.params.orderId).select("_id user total paymentStatus status transactionId");
+    if (!order) return res.status(404).json({ message: "Order not found" });
+    if (String(order.user) !== String(req.user._id)) return res.status(403).json({ message: "You cannot view this payment" });
+
+    const payment = await Payment.findOne({ order: order._id }).sort({ createdAt: -1 }).lean();
+
+    return res.json({
+      order: {
+        _id: order._id,
+        total: order.total,
+        paymentStatus: order.paymentStatus,
+        status: order.status,
+        transactionId: order.transactionId || null,
+      },
+      payment: getPaymentState(payment),
+    });
+  } catch (error) {
+    console.error("PAYMENT STATUS ERROR:", error);
+    return res.status(500).json({ message: "Unable to load payment status" });
   }
 };
 
@@ -77,18 +149,12 @@ export const mpesaCallback = async (req, res) => {
         await order.save();
 
         if (order.user) {
-          await createNotification({
-            user: order.user,
-            message: "Your order payment was successful",
-          });
+          await createNotification({ user: order.user, message: "Your order payment was successful" });
         }
 
         for (const item of order.books || []) {
           if (item.seller) {
-            await createNotification({
-              user: item.seller,
-              message: "You received a new paid order",
-            });
+            await createNotification({ user: item.seller, message: "You received a new paid order" });
           }
         }
       }
