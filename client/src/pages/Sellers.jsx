@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { getSellers } from "../api/sellerApi";
 
@@ -7,37 +7,42 @@ const getSellerName = (seller) => {
   return String(name || "BookHub Seller").trim() || "BookHub Seller";
 };
 
+const normalizeSellers = (payload) => {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.sellers)) return payload.sellers;
+  if (Array.isArray(payload?.data)) return payload.data;
+  return [];
+};
+
 export default function Sellers() {
   const [search, setSearch] = useState("");
   const [sellers, setSellers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [reloadKey, setReloadKey] = useState(0);
+
+  const loadSellers = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError("");
+      const response = await getSellers(search.trim() ? { search: search.trim() } : {});
+      setSellers(normalizeSellers(response?.data));
+    } catch (requestError) {
+      console.error("Failed loading sellers:", requestError);
+      setError(
+        requestError.response?.data?.message ||
+          "We couldn't load sellers right now. Please try again.",
+      );
+      setSellers([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [search]);
 
   useEffect(() => {
-    const timer = setTimeout(async () => {
-      try {
-        setLoading(true);
-        setError("");
-        const { data } = await getSellers(
-          search.trim() ? { search: search.trim() } : {},
-        );
-        const results = Array.isArray(data)
-          ? data
-          : Array.isArray(data?.sellers)
-            ? data.sellers
-            : [];
-        setSellers(results);
-      } catch (requestError) {
-        console.error("Failed loading sellers:", requestError);
-        setError("We couldn't load sellers right now. Please try again.");
-        setSellers([]);
-      } finally {
-        setLoading(false);
-      }
-    }, 250);
-
+    const timer = setTimeout(loadSellers, 250);
     return () => clearTimeout(timer);
-  }, [search]);
+  }, [loadSellers, reloadKey]);
 
   return (
     <main className="min-h-screen bg-slate-50 px-4 py-10 text-slate-900 dark:bg-slate-950 dark:text-white sm:px-6 lg:px-8">
@@ -50,20 +55,16 @@ export default function Sellers() {
             Shop from a seller
           </h1>
           <p className="mt-4 text-base leading-7 text-slate-600 dark:text-slate-300 sm:text-lg">
-            Find a particular seller, open their storefront, and browse only the
-            books they currently have for sale.
+            Find a seller, open their storefront, and browse their approved books.
           </p>
         </header>
 
         <section className="mt-8 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-          <label
-            htmlFor="seller-search"
-            className="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-200"
-          >
+          <label htmlFor="seller-search" className="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-200">
             Search sellers
           </label>
           <div className="relative">
-            <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-lg text-slate-400">
+            <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-lg text-slate-400" aria-hidden="true">
               🔎
             </span>
             <input
@@ -78,21 +79,19 @@ export default function Sellers() {
         </section>
 
         {loading ? (
-          <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {[1, 2, 3].map((item) => (
-              <div
-                key={item}
-                className="h-52 animate-pulse rounded-2xl bg-slate-200 dark:bg-slate-800"
-              />
+          <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3" aria-label="Loading sellers">
+            {[1, 2, 3, 4, 5, 6].map((item) => (
+              <div key={item} className="h-52 animate-pulse rounded-2xl bg-slate-200 dark:bg-slate-800" />
             ))}
           </div>
         ) : error ? (
           <div className="mt-8 rounded-2xl border border-red-200 bg-red-50 p-10 text-center text-red-700 dark:border-red-900 dark:bg-red-950/30 dark:text-red-300">
-            <p className="font-semibold">{error}</p>
+            <div className="text-4xl" aria-hidden="true">⚠️</div>
+            <p className="mt-3 font-semibold">{error}</p>
             <button
               type="button"
-              onClick={() => setSearch((value) => value)}
-              className="mt-4 rounded-lg bg-red-600 px-4 py-2 font-semibold text-white hover:bg-red-700"
+              onClick={() => setReloadKey((value) => value + 1)}
+              className="mt-5 rounded-xl bg-red-600 px-5 py-2.5 font-bold text-white hover:bg-red-700"
             >
               Try again
             </button>
@@ -100,12 +99,15 @@ export default function Sellers() {
         ) : sellers.length === 0 ? (
           <div className="mt-8 rounded-2xl border border-dashed border-slate-300 bg-white p-12 text-center dark:border-slate-700 dark:bg-slate-900">
             <div className="text-5xl" aria-hidden="true">🏪</div>
-            <h2 className="mt-4 text-xl font-bold text-slate-900 dark:text-white">
-              No sellers found
-            </h2>
+            <h2 className="mt-4 text-xl font-bold text-slate-900 dark:text-white">No sellers found</h2>
             <p className="mt-2 text-slate-500 dark:text-slate-400">
-              Try a different seller name or clear your search.
+              {search ? "Try a different seller name or clear your search." : "There are no active sellers available yet."}
             </p>
+            {search && (
+              <button type="button" onClick={() => setSearch("")} className="mt-5 rounded-xl bg-blue-600 px-5 py-2.5 font-bold text-white hover:bg-blue-700">
+                Clear search
+              </button>
+            )}
           </div>
         ) : (
           <section aria-label="BookHub sellers" className="mt-8">
@@ -114,11 +116,7 @@ export default function Sellers() {
                 {sellers.length} {sellers.length === 1 ? "seller" : "sellers"} available
               </p>
               {search && (
-                <button
-                  type="button"
-                  onClick={() => setSearch("")}
-                  className="text-sm font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400"
-                >
+                <button type="button" onClick={() => setSearch("")} className="text-sm font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400">
                   Clear search
                 </button>
               )}
@@ -151,7 +149,6 @@ export default function Sellers() {
                             }}
                           />
                         ) : null}
-
                         <div
                           className={`${seller?.avatar ? "hidden" : ""} flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-blue-100 text-2xl dark:bg-blue-950`}
                           aria-hidden="true"
@@ -160,9 +157,7 @@ export default function Sellers() {
                         </div>
 
                         <div className="min-w-0 flex-1">
-                          <p className="mb-1 text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">
-                            Seller
-                          </p>
+                          <p className="mb-1 text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">Seller</p>
                           <h2 className="break-words text-lg font-extrabold leading-tight text-slate-950 group-hover:text-blue-600 dark:text-white dark:group-hover:text-blue-400">
                             {name}
                           </h2>
@@ -174,9 +169,7 @@ export default function Sellers() {
 
                       <div className="mt-6 flex items-center justify-between gap-4 border-t border-slate-100 pt-4 dark:border-slate-800">
                         <span className="text-sm font-semibold text-slate-600 dark:text-slate-300">
-                          {hasRating && Number.isFinite(rating)
-                            ? `${rating.toFixed(1)} ★`
-                            : "New seller"}
+                          {hasRating && Number.isFinite(rating) ? `${rating.toFixed(1)} ★` : "New seller"}
                         </span>
                         <span className="font-bold text-blue-600 dark:text-blue-400">
                           Visit store <span aria-hidden="true">→</span>
