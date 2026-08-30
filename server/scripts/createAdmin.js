@@ -6,43 +6,55 @@ import User from "../models/User.js";
 
 dotenv.config();
 
+const requiredEnv = ["MONGODB_URI", "ADMIN_EMAIL", "ADMIN_PASSWORD"];
+
+for (const key of requiredEnv) {
+  if (!process.env[key]) {
+    console.error(`Missing required environment variable: ${key}`);
+    process.exit(1);
+  }
+}
+
+const normalizeEmail = (email) => String(email).trim().toLowerCase();
+
 const createAdmin = async () => {
   try {
     await mongoose.connect(process.env.MONGODB_URI);
-
     console.log("MongoDB connected");
 
-    const existingAdmin = await User.findOne({
-      email: "admin@bookhub.com",
-    });
+    const email = normalizeEmail(process.env.ADMIN_EMAIL);
+    const password = String(process.env.ADMIN_PASSWORD);
 
-    if (existingAdmin) {
-      console.log("Admin already exists");
-
-      process.exit();
+    if (password.length < 12) {
+      throw new Error("ADMIN_PASSWORD must be at least 12 characters long");
     }
 
-    const hashedPassword = await bcrypt.hash("Admin12345", 10);
+    const existingAdmin = await User.findOne({ email });
+
+    if (existingAdmin) {
+      if (existingAdmin.role !== "admin") {
+        throw new Error(`A non-admin user already exists with ${email}`);
+      }
+      console.log("Admin already exists");
+      return;
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 12);
 
     const admin = await User.create({
-      name: "BookHub Admin",
-
-      email: "admin@bookhub.com",
-
-      phone: "0700000000",
-
+      name: process.env.ADMIN_NAME || "BookHub Admin",
+      email,
+      phone: process.env.ADMIN_PHONE || "0700000000",
       password: hashedPassword,
-
       role: "admin",
     });
 
-    console.log("Admin created successfully", admin.email);
-
-    process.exit();
+    console.log(`Admin created successfully: ${admin.email}`);
   } catch (error) {
-    console.log(error);
-
-    process.exit(1);
+    console.error("Admin creation failed:", error.message);
+    process.exitCode = 1;
+  } finally {
+    await mongoose.disconnect().catch(() => {});
   }
 };
 
