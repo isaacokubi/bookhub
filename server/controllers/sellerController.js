@@ -66,6 +66,10 @@ export const getPublicSellerStore = async (req, res) => {
 };
 
 // CREATE BOOK
+// Seller listings are published immediately. The public marketplace only
+// exposes approved listings, so keeping the status explicit here prevents
+// seller-created books from silently remaining in the schema's "pending"
+// default and becoming invisible to buyers.
 export const createBook = async (req, res) => {
   try {
     const book = await Book.create({
@@ -77,8 +81,9 @@ export const createBook = async (req, res) => {
       condition: req.body.condition,
       images: req.file ? [req.file.path] : [],
       seller: req.user._id,
+      status: "approved",
     });
-    res.status(201).json({ message: "Book created successfully", book });
+    res.status(201).json({ message: "Book published successfully", book });
   } catch (error) {
     console.log(error);
     res.status(500).json({ message: error.message });
