@@ -19,10 +19,13 @@ import AdminUsers from "../pages/AdminUsers";
 import AdminSellers from "../pages/admin/AdminSellers";
 import SellerRegister from "../pages/SellerRegister";
 import SellerDashboardPro from "../pages/SellerDashboardPro";
+import SellerProfile from "../pages/seller/SellerProfile";
 import AddBook from "../pages/seller/AddBook";
 import MyBooks from "../pages/seller/MyBooks";
 import SellerOrders from "../pages/seller/SellerOrders";
 import CustomerDashboard from "../pages/CustomerDashboard";
+
+const sellerRoles = ["seller", "seller_admin", "tour_guide", "tour_manager"];
 
 export default function AppRoutes() {
   return (
@@ -42,11 +45,12 @@ export default function AppRoutes() {
       <Route path="/dashboard" element={<RoleRoute roles={["buyer", "customer", "user"]}><CustomerDashboard /></RoleRoute>} />
 
       <Route path="/seller/register" element={<SellerRegister />} />
-      <Route path="/seller" element={<RoleRoute roles={["seller", "seller_admin", "tour_guide", "tour_manager"]}><SellerDashboardPro /></RoleRoute>} />
-      <Route path="/seller/dashboard" element={<RoleRoute roles={["seller", "seller_admin", "tour_guide", "tour_manager"]}><SellerDashboardPro /></RoleRoute>} />
-      <Route path="/seller/add-book" element={<RoleRoute roles={["seller", "seller_admin", "tour_guide", "tour_manager"]}><AddBook /></RoleRoute>} />
-      <Route path="/seller/books" element={<RoleRoute roles={["seller", "seller_admin", "tour_guide", "tour_manager"]}><MyBooks /></RoleRoute>} />
-      <Route path="/seller/orders" element={<RoleRoute roles={["seller", "seller_admin", "tour_guide", "tour_manager"]}><SellerOrders /></RoleRoute>} />
+      <Route path="/seller" element={<RoleRoute roles={sellerRoles}><SellerDashboardPro /></RoleRoute>} />
+      <Route path="/seller/dashboard" element={<RoleRoute roles={sellerRoles}><SellerDashboardPro /></RoleRoute>} />
+      <Route path="/seller/profile" element={<RoleRoute roles={sellerRoles}><SellerProfile /></RoleRoute>} />
+      <Route path="/seller/add-book" element={<RoleRoute roles={sellerRoles}><AddBook /></RoleRoute>} />
+      <Route path="/seller/books" element={<RoleRoute roles={sellerRoles}><MyBooks /></RoleRoute>} />
+      <Route path="/seller/orders" element={<RoleRoute roles={sellerRoles}><SellerOrders /></RoleRoute>} />
 
       <Route path="/admin/dashboard" element={<AdminRoute><AdminDashboardPro /></AdminRoute>} />
       <Route path="/admin/books" element={<AdminRoute><AdminBooks /></AdminRoute>} />
