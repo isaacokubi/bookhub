@@ -22,15 +22,37 @@ const getInitialFilters = (params) => ({
 export default function Books() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [filters, setFilters] = useState(() => getInitialFilters(searchParams));
-  const [submittedSearch, setSubmittedSearch] = useState(() => searchParams.get("search") || "");
   const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [searching, setSearching] = useState(false);
 
+  // Keep the UI synchronized when a user navigates with browser back/forward
+  // or opens a filtered marketplace URL directly.
   useEffect(() => {
     setFilters(getInitialFilters(searchParams));
-    setSubmittedSearch(searchParams.get("search") || "");
   }, [searchParams]);
+
+  // Search as the user types. A short debounce prevents an API request for
+  // every single keystroke while still making the marketplace feel live.
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      const nextParams = {};
+      const search = filters.search.trim();
+      if (search) nextParams.search = search;
+      if (filters.category) nextParams.category = filters.category;
+      if (filters.condition) nextParams.condition = filters.condition;
+      if (filters.sort) nextParams.sort = filters.sort;
+
+      const current = searchParams.toString();
+      const next = new URLSearchParams(nextParams).toString();
+      if (current !== next) {
+        setSearchParams(nextParams, { replace: true });
+      }
+    }, filters.search === searchParams.get("search") ? 0 : 300);
+
+    return () => window.clearTimeout(timer);
+  }, [filters.search, filters.category, filters.condition, filters.sort, searchParams, setSearchParams]);
 
   useEffect(() => {
     let active = true;
@@ -38,9 +60,11 @@ export default function Books() {
     const loadBooks = async () => {
       try {
         setLoading(true);
+        setSearching(Boolean(filters.search.trim()));
         setError("");
+
         const response = await getBooks({
-          search: submittedSearch || undefined,
+          search: filters.search.trim() || undefined,
           category: filters.category || undefined,
           condition: filters.condition || undefined,
           sort: filters.sort || undefined,
@@ -63,7 +87,10 @@ export default function Books() {
           setError("We couldn't load the marketplace right now. Please try again.");
         }
       } finally {
-        if (active) setLoading(false);
+        if (active) {
+          setLoading(false);
+          setSearching(false);
+        }
       }
     };
 
@@ -71,38 +98,15 @@ export default function Books() {
     return () => {
       active = false;
     };
-  }, [submittedSearch, filters.category, filters.condition, filters.sort]);
-
-  const updateUrl = (next) => {
-    const params = {};
-    if (next.search.trim()) params.search = next.search.trim();
-    if (next.category) params.category = next.category;
-    if (next.condition) params.condition = next.condition;
-    if (next.sort) params.sort = next.sort;
-    setSearchParams(params, { replace: true });
-  };
-
-  const handleSearchSubmit = (event) => {
-    event.preventDefault();
-    const value = filters.search.trim();
-    setSubmittedSearch(value);
-    updateUrl({ ...filters, search: value });
-  };
+  }, [filters.search, filters.category, filters.condition, filters.sort]);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
-    const next = { ...filters, [name]: value };
-    setFilters(next);
-
-    if (name !== "search") {
-      updateUrl(next);
-    }
+    setFilters((current) => ({ ...current, [name]: value }));
   };
 
   const clearFilters = () => {
-    const next = { search: "", category: "", condition: "", sort: "" };
-    setFilters(next);
-    setSubmittedSearch("");
+    setFilters({ search: "", category: "", condition: "", sort: "" });
     setSearchParams({}, { replace: true });
   };
 
@@ -110,6 +114,8 @@ export default function Books() {
     () => [filters.search.trim(), filters.category, filters.condition, filters.sort].filter(Boolean).length,
     [filters],
   );
+
+  const activeSearch = filters.search.trim();
 
   return (
     <main className="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-white">
@@ -127,7 +133,7 @@ export default function Books() {
             </p>
           </div>
 
-          <form onSubmit={handleSearchSubmit} className="mt-8 rounded-2xl border border-slate-200 bg-slate-50 p-3 shadow-sm dark:border-slate-700 dark:bg-slate-800/70">
+          <div className="mt-8 rounded-2xl border border-slate-200 bg-slate-50 p-3 shadow-sm dark:border-slate-700 dark:bg-slate-800/70">
             <div className="flex flex-col gap-3 lg:flex-row">
               <label className="relative flex-1">
                 <span className="sr-only">Search books</span>
@@ -140,12 +146,15 @@ export default function Books() {
                   onChange={handleChange}
                   placeholder="Search by title, author or ISBN..."
                   autoComplete="off"
-                  className="h-12 w-full rounded-xl border border-slate-200 bg-white pl-11 pr-4 text-sm font-medium outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-600 dark:bg-slate-900"
+                  className="h-12 w-full rounded-xl border border-slate-200 bg-white pl-11 pr-12 text-sm font-medium outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-600 dark:bg-slate-900"
                 />
+                {searching && (
+                  <span className="absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin rounded-full border-2 border-slate-300 border-t-blue-600" aria-label="Searching" />
+                )}
               </label>
-              <button type="submit" className="h-12 rounded-xl bg-blue-600 px-7 font-bold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-500/20">
-                Search books
-              </button>
+              <div className="flex h-12 items-center rounded-xl bg-blue-50 px-4 text-sm font-bold text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 lg:min-w-32 lg:justify-center">
+                Live search
+              </div>
             </div>
 
             <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -161,7 +170,7 @@ export default function Books() {
                 {SORT_OPTIONS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
               </select>
             </div>
-          </form>
+          </div>
         </div>
       </section>
 
@@ -172,7 +181,7 @@ export default function Books() {
             <h2 className="mt-1 text-2xl font-black tracking-tight">Books available</h2>
             <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
               {loading ? "Finding listings..." : `${books.length} ${books.length === 1 ? "listing" : "listings"} found`}
-              {submittedSearch ? ` for “${submittedSearch}”` : ""}
+              {activeSearch ? ` for “${activeSearch}”` : ""}
             </p>
           </div>
 
@@ -197,7 +206,7 @@ export default function Books() {
             <div className="text-4xl">⚠️</div>
             <h2 className="mt-3 text-xl font-bold">Marketplace unavailable</h2>
             <p className="mt-2 text-sm text-red-700 dark:text-red-300">{error}</p>
-            <button type="button" onClick={() => setSubmittedSearch(submittedSearch)} className="mt-5 rounded-xl bg-red-600 px-5 py-2.5 font-bold text-white hover:bg-red-700">Try again</button>
+            <button type="button" onClick={() => setFilters((current) => ({ ...current }))} className="mt-5 rounded-xl bg-red-600 px-5 py-2.5 font-bold text-white hover:bg-red-700">Try again</button>
           </div>
         ) : books.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-16 text-center dark:border-slate-700 dark:bg-slate-900">
