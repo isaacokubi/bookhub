@@ -1,9 +1,18 @@
 import Payment from "../models/Payment.js";
 import Order from "../models/Order.js";
 
+const MAX_PAYMENT_TIMEOUT_MS = 5 * 60 * 1000;
+
+// M-Pesa checkout requests must never remain Pending for more than five
+// minutes. An environment value may shorten the timeout, but can never extend
+// the five-minute safety limit.
 export const getPaymentTimeoutMs = () => {
-  const minutes = Number(process.env.MPESA_PAYMENT_TIMEOUT_MINUTES) || 5;
-  return Math.max(1, minutes) * 60 * 1000;
+  const configuredMinutes = Number(process.env.MPESA_PAYMENT_TIMEOUT_MINUTES);
+  const minutes = Number.isFinite(configuredMinutes) && configuredMinutes > 0
+    ? configuredMinutes
+    : 5;
+
+  return Math.min(minutes * 60 * 1000, MAX_PAYMENT_TIMEOUT_MS);
 };
 
 export const expireStalePendingPayments = async () => {
@@ -19,14 +28,18 @@ export const expireStalePendingPayments = async () => {
   if (!stalePayments.length) return 0;
 
   const paymentIds = stalePayments.map((payment) => payment._id);
-  const orderIds = [...new Set(stalePayments.map((payment) => String(payment.order)))];
+  const orderIds = [...new Set(
+    stalePayments
+      .filter((payment) => payment.order)
+      .map((payment) => String(payment.order)),
+  )];
 
   await Payment.updateMany(
     { _id: { $in: paymentIds }, status: "Pending" },
     {
       $set: {
         status: "Failed",
-        resultDesc: "M-Pesa payment request expired because it was not completed.",
+        resultDesc: "M-Pesa payment request expired because it was not completed within 5 minutes.",
       },
     },
   );
