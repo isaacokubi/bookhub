@@ -1,52 +1,24 @@
-import axios from "axios";
+import api from "./axios";
 
-const API = "https://bookhub-1-d9b3.onrender.com/api/seller";
+const API = "/seller";
 
-// Create book with image upload
-export const createBook = (data) => {
-  return axios.post(`${API}/books`, data, {
-    headers: {
-      Authorization: `Bearer ${localStorage.getItem("token")}`,
+// Public buyer-facing seller directory.
+export const getSellers = (params = {}) => api.get(`${API}/public`, { params });
 
-      "Content-Type": "multipart/form-data",
-    },
-  });
-};
+// Public seller storefront.
+export const getSellerStore = (sellerId) => api.get(`${API}/public/${sellerId}/books`);
 
-// Get seller books
-export const getSellerBooks = () => {
-  return axios.get(`${API}/books`, {
-    headers: {
-      Authorization: `Bearer ${localStorage.getItem("token")}`,
-    },
-  });
-};
+// Seller management APIs.
+export const createBook = (data) => api.post(`${API}/books`, data, {
+  headers: { "Content-Type": "multipart/form-data" },
+});
 
-// Update book
-export const updateBook = (id, data) => {
-  return axios.put(`${API}/books/${id}`, data, {
-    headers: {
-      Authorization: `Bearer ${localStorage.getItem("token")}`,
+export const getSellerBooks = () => api.get(`${API}/books`);
 
-      "Content-Type": "multipart/form-data",
-    },
-  });
-};
+export const updateBook = (id, data) => api.put(`${API}/books/${id}`, data, {
+  headers: { "Content-Type": "multipart/form-data" },
+});
 
-// Delete book
-export const deleteBook = (id) => {
-  return axios.delete(`${API}/books/${id}`, {
-    headers: {
-      Authorization: `Bearer ${localStorage.getItem("token")}`,
-    },
-  });
-};
+export const deleteBook = (id) => api.delete(`${API}/books/${id}`);
 
-//get seller order
-export const getSellerOrders = () => {
-  return axios.get(
-    `${API}/orders`,
-
-    config,
-  );
-};
+export const getSellerOrders = () => api.get(`${API}/orders`);
