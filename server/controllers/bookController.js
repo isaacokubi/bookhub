@@ -10,7 +10,17 @@ export const createBook = async (req, res, next) => {
     if (req.files) {
       for (const file of req.files) images.push(await uploadImage(file));
     }
-    const book = await Book.create({ ...req.body, images, seller: req.user._id });
+
+    // Seller listings are published immediately. Never allow a seller to
+    // inherit the Book schema's pending default through this legacy endpoint.
+    const status = req.user?.role === "seller" ? "approved" : (req.body.status || "pending");
+
+    const book = await Book.create({
+      ...req.body,
+      images,
+      seller: req.user._id,
+      status,
+    });
     res.status(201).json(book);
   } catch (error) {
     next(error);
@@ -106,7 +116,12 @@ export const updateBook = async (req, res) => {
     const book = await Book.findById(req.params.id);
     if (!book) return res.status(404).json({ message: "Book not found" });
     if (book.seller.toString() !== req.user._id.toString()) return res.status(403).json({ message: "Not allowed" });
+
     Object.assign(book, req.body);
+    // Sellers cannot accidentally make their own listing invisible by setting
+    // status to pending/rejected through the legacy update endpoint.
+    if (req.user?.role === "seller") book.status = "approved";
+
     await book.save();
     res.json(book);
   } catch (error) {
