@@ -66,6 +66,31 @@ export const getPublicSellerStore = async (req, res) => {
   }
 };
 
+// Update the authenticated seller's profile image.
+export const updateSellerProfileImage = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: "Please select a profile image." });
+    }
+
+    const imageUrl = await uploadImage(req.file, { folder: "bookhub/sellers" });
+    const seller = await User.findOneAndUpdate(
+      { _id: req.user._id, role: "seller" },
+      { avatar: imageUrl },
+      { new: true, runValidators: true },
+    ).select("name email phone role avatar rating isActive createdAt updatedAt");
+
+    if (!seller) {
+      return res.status(404).json({ message: "Seller account not found." });
+    }
+
+    res.json({ message: "Seller profile image updated successfully.", user: seller });
+  } catch (error) {
+    console.error("Seller profile image upload failed:", error);
+    res.status(500).json({ message: error.message || "Unable to update profile image." });
+  }
+};
+
 // CREATE BOOK
 // Seller listings are published immediately and explicitly marked approved.
 export const createBook = async (req, res) => {
