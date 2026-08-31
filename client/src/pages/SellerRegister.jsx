@@ -2,6 +2,8 @@ import { useState } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
 
+const API_URL = (import.meta.env.VITE_API_URL || "http://localhost:5000/api").replace(/\/+$/, "");
+
 export default function SellerRegister() {
   const [form, setForm] = useState({
     name: "",
@@ -21,15 +23,12 @@ export default function SellerRegister() {
     e.preventDefault();
 
     try {
-      const response = await axios.post(
-        "https://bookhub-1-d9b3.onrender.com/api/auth/seller/register",
-        {
-          name: form.name,
-          email: form.email,
-          phone: form.phone,
-          password: form.password,
-        },
-      );
+      const response = await axios.post(`${API_URL}/auth/seller/register`, {
+        name: form.name,
+        email: form.email,
+        phone: form.phone,
+        password: form.password,
+      });
 
       toast.success(
         response.data.message || "Seller account created successfully",
@@ -61,12 +60,7 @@ export default function SellerRegister() {
           placeholder="Full Name"
           value={form.name}
           onChange={handleChange}
-          className="
-          border
-          p-3
-          w-full
-          rounded
-          "
+          className="border p-3 w-full rounded"
           required
         />
 
@@ -76,12 +70,7 @@ export default function SellerRegister() {
           placeholder="Email Address"
           value={form.email}
           onChange={handleChange}
-          className="
-          border
-          p-3
-          w-full
-          rounded
-          "
+          className="border p-3 w-full rounded"
           required
         />
 
@@ -91,12 +80,7 @@ export default function SellerRegister() {
           placeholder="Phone Number (2547XXXXXXXX)"
           value={form.phone}
           onChange={handleChange}
-          className="
-          border
-          p-3
-          w-full
-          rounded
-          "
+          className="border p-3 w-full rounded"
           required
         />
 
@@ -106,27 +90,13 @@ export default function SellerRegister() {
           placeholder="Password"
           value={form.password}
           onChange={handleChange}
-          className="
-          border
-          p-3
-          w-full
-          rounded
-          "
+          className="border p-3 w-full rounded"
           required
         />
 
         <button
           type="submit"
-          className="
-          bg-blue-600
-          hover:bg-blue-700
-          text-white
-          px-5
-          py-3
-          rounded
-          w-full
-          font-semibold
-          "
+          className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded w-full font-semibold"
         >
           Register as Seller
         </button>
