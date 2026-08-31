@@ -20,7 +20,7 @@ export default function Checkout() {
   const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const cartItems = Array.isArray(cart) ? cart : cart?.books || cart?.items || [];
+  const cartItems = useMemo(() => (Array.isArray(cart) ? cart : cart?.books || cart?.items || []), [cart]);
   const { total, quantity } = useMemo(() => cartItems.reduce((result, item) => {
     const qty = Math.max(1, Number(item?.quantity) || 1);
     result.quantity += qty;
