@@ -2,13 +2,29 @@ import axios from "axios";
 import moment from "moment";
 import mpesaConfig from "../config/mpesa.js";
 
-const MPESA_OAUTH_URL =
-  "https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials";
+const MPESA_ENDPOINTS = {
+  sandbox: {
+    oauth: "https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials",
+    stkPush: "https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest",
+  },
+  production: {
+    oauth: "https://api.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials",
+    stkPush: "https://api.safaricom.co.ke/mpesa/stkpush/v1/processrequest",
+  },
+};
 
-const MPESA_STK_URL =
-  "https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest";
+const getMpesaEndpoints = (environment) => {
+  const normalizedEnvironment = String(environment || "sandbox").toLowerCase();
+  if (!MPESA_ENDPOINTS[normalizedEnvironment]) {
+    throw new Error("MPESA_ENV must be either sandbox or production.");
+  }
+  return MPESA_ENDPOINTS[normalizedEnvironment];
+};
 
 export const getMpesaToken = async () => {
+  const config = mpesaConfig();
+  const { oauth } = getMpesaEndpoints(config.environment);
+
   try {
     const key = process.env.MPESA_CONSUMER_KEY;
     const secret = process.env.MPESA_CONSUMER_SECRET;
@@ -19,7 +35,7 @@ export const getMpesaToken = async () => {
 
     const auth = Buffer.from(`${key}:${secret}`).toString("base64");
 
-    const response = await axios.get(MPESA_OAUTH_URL, {
+    const response = await axios.get(oauth, {
       headers: {
         Authorization: `Basic ${auth}`,
       },
@@ -44,6 +60,7 @@ export const getMpesaToken = async () => {
 
 export const stkPush = async (phone, amount, reference) => {
   const config = mpesaConfig();
+  const { stkPush: stkPushUrl } = getMpesaEndpoints(config.environment);
 
   try {
     if (!config.shortCode) {
@@ -95,6 +112,7 @@ export const stkPush = async (phone, amount, reference) => {
     };
 
     console.log("MPESA STK REQUEST:", {
+      environment: config.environment,
       BusinessShortCode: payload.BusinessShortCode,
       TransactionType: payload.TransactionType,
       Amount: payload.Amount,
@@ -106,7 +124,7 @@ export const stkPush = async (phone, amount, reference) => {
       TransactionDesc: payload.TransactionDesc,
     });
 
-    const response = await axios.post(MPESA_STK_URL, payload, {
+    const response = await axios.post(stkPushUrl, payload, {
       headers: {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
