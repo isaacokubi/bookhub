@@ -31,6 +31,11 @@ import setupSocket from "./sockets/socket.js";
 const app = express();
 const port = Number(process.env.PORT) || 5000;
 
+// Render/ngrok and other reverse proxies forward the real client IP through
+// X-Forwarded-For. Trust the first proxy hop so express-rate-limit can safely
+// identify clients without the ERR_ERL_UNEXPECTED_X_FORWARDED_FOR warning.
+app.set("trust proxy", 1);
+
 if (!process.env.MONGODB_URI) throw new Error("MONGODB_URI is required");
 if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
   throw new Error("JWT_SECRET is required and must be at least 32 characters long");
@@ -91,17 +96,9 @@ setupSocket(io);
 const startServer = async () => {
   await connectDatabase();
 
-  // Self-heal legacy data on every deploy/restart. This is idempotent and only
-  // changes pending books owned by active seller accounts; rejected listings
-  // remain untouched for moderation/audit purposes.
   await approveExistingSellerBooks();
   await expireStalePendingPayments();
 
-  // Expire abandoned M-Pesa checkouts continuously. The timeout itself is
-  // hard-capped at five minutes in paymentService.js; checking every 10
-  // seconds means an abandoned request is normally converted to Failed within
-  // a few seconds of reaching the five-minute limit, rather than waiting for
-  // a one-minute polling window.
   const paymentExpiryTimer = setInterval(() => {
     expireStalePendingPayments().catch((error) => {
       console.error("Payment expiry job failed:", error);
