@@ -2,102 +2,128 @@ import axios from "axios";
 import moment from "moment";
 import mpesaConfig from "../config/mpesa.js";
 
+const MPESA_OAUTH_URL =
+  "https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials";
+
+const MPESA_STK_URL =
+  "https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest";
+
 export const getMpesaToken = async () => {
   try {
-    const auth = Buffer.from(
-      `${process.env.MPESA_CONSUMER_KEY}:${process.env.MPESA_CONSUMER_SECRET}`,
-    ).toString("base64");
+    const key = process.env.MPESA_CONSUMER_KEY;
+    const secret = process.env.MPESA_CONSUMER_SECRET;
 
-    const response = await axios.get(
-      "https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials",
-      {
-        headers: {
-          Authorization: `Basic ${auth}`,
-        },
+    if (!key || !secret) {
+      throw new Error("M-Pesa consumer credentials are not configured.");
+    }
+
+    const auth = Buffer.from(`${key}:${secret}`).toString("base64");
+
+    const response = await axios.get(MPESA_OAUTH_URL, {
+      headers: {
+        Authorization: `Basic ${auth}`,
       },
-    );
+      timeout: 30000,
+    });
+
+    if (!response.data?.access_token) {
+      throw new Error("Safaricom OAuth returned no access token.");
+    }
 
     return response.data.access_token;
   } catch (error) {
-    console.log("MPESA TOKEN ERROR:", error.response?.data || error.message);
+    console.error("MPESA TOKEN ERROR:", {
+      status: error.response?.status,
+      data: error.response?.data,
+      message: error.message,
+    });
 
     throw error;
   }
 };
 
 export const stkPush = async (phone, amount, reference) => {
+  const config = mpesaConfig();
+
   try {
-    const config = mpesaConfig();
+    if (!config.shortCode) {
+      throw new Error("MPESA_SHORTCODE is not configured.");
+    }
 
-    console.log("MPESA CONFIG CHECK:", {
-      shortCode: config.shortCode,
+    if (!config.passKey) {
+      throw new Error("MPESA_PASSKEY is not configured.");
+    }
 
-      passKey: config.passKey ? "Loaded" : "Missing",
+    if (!config.callbackURL) {
+      throw new Error("MPESA_CALLBACK_URL is not configured.");
+    }
 
-      callbackURL: config.callbackURL,
-    });
+    if (!/^https:\/\//i.test(String(config.callbackURL))) {
+      throw new Error("MPESA_CALLBACK_URL must use HTTPS.");
+    }
+
+    const normalizedPhone = String(phone).replace(/\D/g, "");
+    const normalizedAmount = Number(amount);
+
+    if (!/^254[17]\d{8}$/.test(normalizedPhone)) {
+      throw new Error("Invalid Kenyan M-Pesa phone number.");
+    }
+
+    if (!Number.isFinite(normalizedAmount) || normalizedAmount <= 0) {
+      throw new Error("Invalid M-Pesa payment amount.");
+    }
 
     const token = await getMpesaToken();
-
     const timestamp = moment().format("YYYYMMDDHHmmss");
 
     const password = Buffer.from(
-      config.shortCode + config.passKey + timestamp,
+      `${config.shortCode}${config.passKey}${timestamp}`,
     ).toString("base64");
 
     const payload = {
-      BusinessShortCode: config.shortCode,
-
+      BusinessShortCode: String(config.shortCode),
       Password: password,
-
       Timestamp: timestamp,
-
       TransactionType: "CustomerPayBillOnline",
-
-      Amount: Number(amount),
-
-      PartyA: phone,
-
-      PartyB: config.shortCode,
-
-      PhoneNumber: phone,
-
+      Amount: Math.round(normalizedAmount),
+      PartyA: normalizedPhone,
+      PartyB: String(config.shortCode),
+      PhoneNumber: normalizedPhone,
       CallBackURL: config.callbackURL,
-
-      AccountReference: reference,
-
+      AccountReference: String(reference || "BOOKHUB").slice(0, 20),
       TransactionDesc: "BookHub Kenya Purchase",
     };
 
-    console.log("STK PAYLOAD:", {
+    console.log("MPESA STK REQUEST:", {
       BusinessShortCode: payload.BusinessShortCode,
-
-      PartyB: payload.PartyB,
-
-      PhoneNumber: payload.PhoneNumber,
-
+      TransactionType: payload.TransactionType,
       Amount: payload.Amount,
-
-      Callback: payload.CallBackURL,
+      PartyA: payload.PartyA,
+      PartyB: payload.PartyB,
+      PhoneNumber: payload.PhoneNumber,
+      CallBackURL: payload.CallBackURL,
+      AccountReference: payload.AccountReference,
+      TransactionDesc: payload.TransactionDesc,
     });
 
-    const response = await axios.post(
-      "https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest",
-
-      payload,
-
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+    const response = await axios.post(MPESA_STK_URL, payload, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
       },
-    );
+      timeout: 30000,
+    });
 
-    console.log("MPESA RESPONSE:", response.data);
+    console.log("MPESA STK RESPONSE:", response.data);
 
     return response.data;
   } catch (error) {
-    console.log("STK PUSH ERROR:", error.response?.data || error.message);
+    console.error("STK PUSH ERROR:", {
+      status: error.response?.status,
+      data: error.response?.data,
+      headers: error.response?.headers,
+      message: error.message,
+    });
 
     throw error;
   }
