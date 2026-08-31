@@ -1,6 +1,9 @@
 import axios from "axios";
 
-const API = `${import.meta.env.VITE_API_URL}/favorites`;
+const API_BASE_URL = (
+  import.meta.env.VITE_API_URL || "http://localhost:5000/api"
+).replace(/\/$/, "");
+const API = `${API_BASE_URL}/favorites`;
 
 const getAuthConfig = () => {
   const token = localStorage.getItem("token");
