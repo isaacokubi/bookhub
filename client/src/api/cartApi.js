@@ -1,6 +1,9 @@
 import axios from "axios";
 
-const API = `${import.meta.env.VITE_API_URL}/cart`;
+const API_BASE_URL = (
+  import.meta.env.VITE_API_URL || "http://localhost:5000/api"
+).replace(/\/$/, "");
+const API = `${API_BASE_URL}/cart`;
 
 const authConfig = () => ({
   headers: {
@@ -9,10 +12,7 @@ const authConfig = () => ({
 });
 
 export const getCart = async () => {
-  const { data } = await axios.get(
-    API,
-    authConfig()
-  );
+  const { data } = await axios.get(API, authConfig());
 
   return data;
 };
@@ -21,7 +21,7 @@ export const addToCart = async (bookId) => {
   const { data } = await axios.post(
     `${API}/add`,
     { bookId },
-    authConfig()
+    authConfig(),
   );
 
   return data;
@@ -30,17 +30,14 @@ export const addToCart = async (bookId) => {
 export const removeFromCart = async (bookId) => {
   const { data } = await axios.delete(
     `${API}/remove/${bookId}`,
-    authConfig()
+    authConfig(),
   );
 
   return data;
 };
 
 export const clearCart = async () => {
-  const { data } = await axios.delete(
-    `${API}/clear`,
-    authConfig()
-  );
+  const { data } = await axios.delete(`${API}/clear`, authConfig());
 
   return data;
 };
