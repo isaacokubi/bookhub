@@ -1,4 +1,13 @@
-import "dotenv/config";
+import dotenv from "dotenv";
+import { fileURLToPath } from "url";
+import path from "path";
+
+// Always load the server-local .env based on this file's location, not the
+// process working directory. This prevents a root-level launch from missing
+// server/.env and incorrectly reporting M-Pesa variables as unavailable.
+const serverDir = path.dirname(fileURLToPath(import.meta.url));
+dotenv.config({ path: path.join(serverDir, ".env") });
+
 import express from "express";
 import cors from "cors";
 import morgan from "morgan";
@@ -31,9 +40,6 @@ import setupSocket from "./sockets/socket.js";
 const app = express();
 const port = Number(process.env.PORT) || 5000;
 
-// Render/ngrok and other reverse proxies forward the real client IP through
-// X-Forwarded-For. Trust the first proxy hop so express-rate-limit can safely
-// identify clients without the ERR_ERL_UNEXPECTED_X_FORWARDED_FOR warning.
 app.set("trust proxy", 1);
 
 if (!process.env.MONGODB_URI) throw new Error("MONGODB_URI is required");
@@ -109,6 +115,10 @@ const startServer = async () => {
   httpServer.listen(port, () => {
     console.log(`BookHub API running on port ${port}`);
     console.log(`Allowed frontend origins: ${allowedOrigins.join(", ")}`);
+    console.log(`M-Pesa environment: ${process.env.MPESA_ENV || "sandbox"}`);
+    console.log(`M-Pesa shortcode configured: ${Boolean(process.env.MPESA_SHORTCODE)}`);
+    console.log(`M-Pesa passkey configured: ${Boolean(process.env.MPESA_PASSKEY)}`);
+    console.log(`M-Pesa callback configured: ${Boolean(process.env.MPESA_CALLBACK_URL)}`);
     console.log(`M-Pesa pending timeout: ${Math.round(getPaymentTimeoutMs() / 60000)} minute(s)`);
   });
 };
