@@ -72,8 +72,18 @@ app.use(cookieParser());
 app.use(sanitize);
 app.use(morgan(process.env.NODE_ENV === "production" ? "combined" : "dev"));
 
-app.get("/", (req, res) => res.json({ message: "BookHub Kenya API Running", status: "success" }));
-app.get("/health", (req, res) => res.json({ status: "OK", server: "BookHub Kenya API", time: new Date() }));
+const healthResponse = (req, res) =>
+  res.json({
+    status: "OK",
+    server: "BookHub Kenya API",
+    time: new Date(),
+  });
+
+app.get("/", (req, res) =>
+  res.json({ message: "BookHub Kenya API Running", status: "success" }),
+);
+app.get("/health", healthResponse);
+app.get("/api/health", healthResponse);
 
 app.use("/api/cart", cartRoutes);
 app.use("/api/auth", authRoutes);
