@@ -11,10 +11,7 @@ import auth from "../middleware/auth.js";
 const router = express.Router();
 
 router.post("/stkpush", auth, initiatePayment);
-router.get("/status/:orderId", auth, (req, res, next) => {
-  req.params.orderId = req.params.orderId;
-  return getPaymentStatus(req, res, next);
-});
+router.get("/status/:orderId", auth, getPaymentStatus);
 router.post("/callback", mpesaCallback);
 
 export default router;
