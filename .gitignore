@@ -47,3 +47,5 @@ uploads/
 
 # Local development/test artifacts
 *.local
+server/.env
+client/.env.local
