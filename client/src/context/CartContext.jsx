@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useState, useCallback } from "react";
 import { useAuth } from "./AuthContext";
 import { getBook } from "../api/bookApi";
 import { getCart, addToCart as addToCartApi, removeFromCart as removeFromCartApi, clearCart as clearCartApi } from "../api/cartApi";
@@ -35,12 +35,12 @@ export function CartProvider({ children }) {
   const [cart, setCart] = useState(emptyCart);
   const [loading, setLoading] = useState(false);
 
-  const save = (data, persistGuest = !user) => {
+  const save = useCallback((data, persistGuest = !user) => {
     const normalized = normalize(data);
     setCart(normalized);
     if (persistGuest) writeGuestCart(normalized);
     return normalized;
-  };
+  }, [user]);
 
   useEffect(() => {
     let active = true;
@@ -81,7 +81,7 @@ export function CartProvider({ children }) {
     }
     load();
     return () => { active = false; };
-  }, [user]);
+  }, [user, save]);
 
   const addBookToCart = async (bookOrId) => {
     const id = getId(bookOrId) || bookOrId;
