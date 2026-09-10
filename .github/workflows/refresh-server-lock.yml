@@ -1,0 +1,40 @@
+name: Refresh server lockfile
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "server/package.json"
+      - "server/package-lock.json"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.14.1
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+      - name: Refresh lockfile
+        working-directory: server
+        run: npm install --package-lock-only --ignore-scripts
+      - name: Commit updated lockfile
+        run: |
+          if git diff --quiet -- server/package-lock.json; then
+            echo "Server lockfile is already synchronized."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add server/package-lock.json
+          git commit -m "ci: synchronize server lockfile [skip ci]"
+          git push origin main
