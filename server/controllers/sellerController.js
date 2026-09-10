@@ -87,7 +87,7 @@ export const updateSellerProfileImage = async (req, res) => {
     res.json({ message: "Seller profile image updated successfully.", user: seller });
   } catch (error) {
     console.error("Seller profile image upload failed:", error);
-    res.status(500).json({ message: error.message || "Unable to update profile image." });
+    res.status(error.statusCode || 500).json({ message: error.message || "Unable to update profile image." });
   }
 };
 
@@ -109,7 +109,7 @@ export const createBook = async (req, res) => {
     res.status(201).json({ message: "Book published successfully", book });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ message: error.message });
+    res.status(error.statusCode || 500).json({ message: error.message });
   }
 };
 
@@ -146,7 +146,7 @@ export const updateBook = async (req, res) => {
     await book.save();
     res.json(book);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(error.statusCode || 500).json({ message: error.message });
   }
 };
 
